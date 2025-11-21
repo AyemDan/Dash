@@ -2,7 +2,6 @@ import { useState, useRef } from "react";
 import { useFormik } from "formik";
 import * as Yup from "yup";
 import { LuPlus, LuTrash2 } from "react-icons/lu";
-import Input from "../Input.tsx";
 import Select from "../Select.tsx";
 import ActionButton from "../ActionButton.tsx";
 
@@ -12,7 +11,6 @@ interface Enrollment {
     moduleCode: string;
     moduleName: string;
     credits: number;
-    instructor: string;
     progress: number;
     grade: string | null;
     status: "Registered" | "In Progress" | "Completed" | "Dropped";
@@ -36,7 +34,6 @@ const Enrollments = () => {
             moduleCode: "SE101",
             moduleName: "Introduction to Programming",
             credits: 4,
-            instructor: "Prof. White",
             progress: 100,
             grade: "A-",
             status: "Completed",
@@ -47,7 +44,6 @@ const Enrollments = () => {
             moduleCode: "SE102",
             moduleName: "Software Design Principles",
             credits: 3,
-            instructor: "Dr. Taylor",
             progress: 70,
             grade: "B+",
             status: "In Progress",
@@ -58,7 +54,6 @@ const Enrollments = () => {
             moduleCode: "MATH101",
             moduleName: "Calculus I",
             credits: 4,
-            instructor: "Prof. Miller",
             progress: 40,
             grade: null,
             status: "Registered",
@@ -69,7 +64,6 @@ const Enrollments = () => {
             moduleCode: "ENG101",
             moduleName: "Technical Writing",
             credits: 3,
-            instructor: "Dr. Roberts",
             progress: 20,
             grade: null,
             status: "Registered",
@@ -81,7 +75,6 @@ const Enrollments = () => {
             moduleCode: "CS101",
             moduleName: "Introduction to Computer Science",
             credits: 3,
-            instructor: "Dr. Smith",
             progress: 85,
             grade: "A",
             status: "In Progress",
@@ -92,7 +85,6 @@ const Enrollments = () => {
             moduleCode: "CS201",
             moduleName: "Object-Oriented Programming",
             credits: 4,
-            instructor: "Prof. Johnson",
             progress: 60,
             grade: "B",
             status: "In Progress",
@@ -103,7 +95,6 @@ const Enrollments = () => {
             moduleCode: "MATH101",
             moduleName: "Calculus I",
             credits: 4,
-            instructor: "Prof. Miller",
             progress: 30,
             grade: null,
             status: "Registered",
@@ -115,7 +106,6 @@ const Enrollments = () => {
             moduleCode: "CS301",
             moduleName: "Data Structures & Algorithms",
             credits: 4,
-            instructor: "Dr. Brown",
             progress: 90,
             grade: "A+",
             status: "Completed",
@@ -126,7 +116,6 @@ const Enrollments = () => {
             moduleCode: "CS302",
             moduleName: "Database Systems",
             credits: 3,
-            instructor: "Prof. Davis",
             progress: 50,
             grade: null,
             status: "In Progress",
@@ -137,19 +126,16 @@ const Enrollments = () => {
             moduleCode: "ENG101",
             moduleName: "Technical Writing",
             credits: 3,
-            instructor: "Dr. Roberts",
             progress: 15,
             grade: null,
             status: "Registered",
         },
-        // Michael Brown (ST003) - 3 enrollments
         {
             id: "11",
             participantId: "3",
             moduleCode: "CS101",
             moduleName: "Introduction to Computer Science",
             credits: 3,
-            instructor: "Dr. Smith",
             progress: 75,
             grade: "B+",
             status: "In Progress",
@@ -160,7 +146,6 @@ const Enrollments = () => {
             moduleCode: "MATH101",
             moduleName: "Calculus I",
             credits: 4,
-            instructor: "Prof. Miller",
             progress: 55,
             grade: "B-",
             status: "In Progress",
@@ -171,7 +156,6 @@ const Enrollments = () => {
             moduleCode: "CS201",
             moduleName: "Object-Oriented Programming",
             credits: 4,
-            instructor: "Prof. Johnson",
             progress: 25,
             grade: null,
             status: "Registered",
@@ -191,8 +175,6 @@ const Enrollments = () => {
     const validationSchema = Yup.object({
         participant: Yup.string()
             .required("Participant is required"),
-        instructor: Yup.string()
-            .required("Instructor is required"),
         module: Yup.string()
             .required("Module is required"),
         status: Yup.string(),
@@ -202,7 +184,6 @@ const Enrollments = () => {
     const formik = useFormik({
         initialValues: {
             participant: "",
-            instructor: "Dr. Smith",
             module: "",
             status: "Registered",
             semester: "1Qtr",
@@ -218,7 +199,6 @@ const Enrollments = () => {
                     moduleCode: selectedModule.moduleId,
                     moduleName: selectedModule.moduleName,
                     credits: 3, // Default, would come from module data
-                    instructor: values.instructor,
                     progress: 0,
                     grade: null,
                     status: values.status as Enrollment["status"],
@@ -229,7 +209,6 @@ const Enrollments = () => {
             formik.resetForm({
                 values: {
                     participant: formik.values.participant, // Keep selected participant
-                    instructor: "Dr. Smith",
                     module: "",
                     status: "Registered",
                     semester: "1Qtr",
@@ -300,24 +279,7 @@ const Enrollments = () => {
                                 </option>
                             ))}
                         </Select>
-
-                        <Input
-                            label="Instructor *"
-                            labelFor="instructor"
-                            attributes={{
-                                type: "text",
-                                name: "instructor",
-                                value: formik.values.instructor,
-                                onChange: formik.handleChange,
-                                onBlur: formik.handleBlur,
-                            }}
-                            error={
-                                formik.touched.instructor && formik.errors.instructor
-                                    ? formik.errors.instructor
-                                    : undefined
-                            }
-                        />
-
+                        
                         <Select
                             label="Module *"
                             labelFor="module"
@@ -423,7 +385,7 @@ const Enrollments = () => {
                                             </span>
                                         </div>
                                         <p className="text-sm text-gray-600 mb-1">
-                                            {enrollment.credits} {enrollment.credits === 1 ? "credit" : "credits"} • {enrollment.instructor}
+                                            {enrollment.credits} {enrollment.credits === 1 ? "credit" : "credits"}
                                         </p>
                                         <p className="text-sm text-gray-600">
                                             Progress: {enrollment.progress}% • Grade: {enrollment.grade || "-"}

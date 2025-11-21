@@ -1,5 +1,5 @@
 import { useState, useRef } from "react";
-import { LuDownload, LuUpload } from "react-icons/lu";
+import { LuDownload } from "react-icons/lu";
 import ActionButton from "../ActionButton.tsx";
 
 interface FileInputProps {
@@ -56,8 +56,6 @@ interface ImportCardProps {
 const ImportCard = ({
     title,
     description,
-    onDownloadTemplate,
-    onImport,
     fileName,
     onFileChange,
 }: ImportCardProps) => {
@@ -74,44 +72,6 @@ const ImportCard = ({
                 fileName={fileName}
                 onFileChange={onFileChange}
             />
-
-            <div className="flex items-center gap-3 pt-2">
-                <ActionButton
-                    buttonText={
-                        <span className="flex items-center gap-2">
-                            <LuDownload className="h-4 w-4" />
-                            Download Template
-                        </span>
-                    }
-                    attributes={{
-                        onClick: onDownloadTemplate,
-                        type: "button",
-                    }}
-                    outline
-                    width="fit"
-                    paddingX="px-4"
-                    backgroundColor="#ffffff"
-                    textColor="#414651"
-                    borderColor="#D5D7DA"
-                />
-                <ActionButton
-                    buttonText={
-                        <span className="flex items-center gap-2">
-                            <LuUpload className="h-4 w-4" />
-                            Import Data
-                        </span>
-                    }
-                    attributes={{
-                        onClick: onImport,
-                        type: "button",
-                    }}
-                    width="fit"
-                    paddingX="px-4"
-                    backgroundColor="#6B7280"
-                    textColor="#ffffff"
-                />
-            </div>
-
             <p className="text-xs text-gray-500 pt-2">
                 Note: Existing records with the same ID will be updated
             </p>
@@ -158,7 +118,7 @@ const ExportCard = ({ title, description, exportFileName, onExport }: ExportCard
 
 const ImportExport = () => {
     const [participantFile, setParticipantFile] = useState<File | null>(null);
-    const [moduleFile, setModuleFile] = useState<File | null>(null);
+    const [moduleFile, setEnrollmentFile] = useState<File | null>(null);
 
     const handleDownloadParticipantTemplate = () => {
         console.log("Download participant template");
@@ -175,17 +135,17 @@ const ImportExport = () => {
         // Add export logic here
     };
 
-    const handleDownloadModuleTemplate = () => {
+    const handleDownloadEnrollmentTemplate = () => {
         console.log("Download module template");
         // Add download logic here
     };
 
-    const handleImportModules = () => {
+    const handleImportEnrollments = () => {
         console.log("Import modules", moduleFile);
         // Add import logic here
     };
 
-    const handleExportModules = () => {
+    const handleExportEnrollments = () => {
         console.log("Export modules");
         // Add export logic here
     };
@@ -209,19 +169,19 @@ const ImportExport = () => {
             />
 
             <ImportCard
-                title="Import Modules"
+                title="Import Enrollments"
                 description="Upload a CSV file with module data"
-                onDownloadTemplate={handleDownloadModuleTemplate}
-                onImport={handleImportModules}
+                onDownloadTemplate={handleDownloadEnrollmentTemplate}
+                onImport={handleImportEnrollments}
                 fileName={moduleFile?.name || ""}
-                onFileChange={setModuleFile}
+                onFileChange={setEnrollmentFile}
             />
 
             <ExportCard
-                title="Export Modules"
+                title="Export Enrollments"
                 description="Download all module data as CSV"
                 exportFileName="courses-export.csv"
-                onExport={handleExportModules}
+                onExport={handleExportEnrollments}
             />
         </div>
     );

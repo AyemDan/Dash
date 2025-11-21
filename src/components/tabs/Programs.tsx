@@ -9,7 +9,7 @@ import ActionButton from "../ActionButton.tsx";
 interface Program {
     id: string;
     programName: string;
-    department: string;
+    semester: string;
     duration: number;
     participantsEnrolled: number;
 }
@@ -19,27 +19,27 @@ const Programs = () => {
         {
             id: "1",
             programName: "Computer Science",
-            department: "Engineering Department",
+            semester: "Engineering Department",
             duration: 4,
             participantsEnrolled: 1,
         },
         {
             id: "2",
             programName: "Information Technology",
-            department: "Engineering Department",
+            semester: "Engineering Department",
             duration: 4,
             participantsEnrolled: 1,
         },
         {
             id: "3",
             programName: "Data Science",
-            department: "Engineering Department",
+            semester: "Engineering Department",
             duration: 4,
             participantsEnrolled: 1,
         },
     ]);
 
-    const departments = [
+    const semesters = [
         "Engineering Department",
         "Business Department",
         "Science Department",
@@ -53,7 +53,7 @@ const Programs = () => {
         programName: Yup.string()
             .required("Program Name is required")
             .min(3, "Program Name must be at least 3 characters"),
-        department: Yup.string()
+        semester: Yup.string()
             .required("Department is required"),
         duration: Yup.string()
             .required("Duration is required"),
@@ -62,7 +62,7 @@ const Programs = () => {
     const formik = useFormik({
         initialValues: {
             programName: "",
-            department: "",
+            semester: "",
             duration: "",
         },
         validationSchema,
@@ -70,7 +70,7 @@ const Programs = () => {
             const newProgram: Program = {
                 id: Date.now().toString(),
                 programName: values.programName,
-                department: values.department,
+                semester: values.semester,
                 duration: parseInt(values.duration),
                 participantsEnrolled: 0,
             };
@@ -119,22 +119,22 @@ const Programs = () => {
                         />
 
                         <Select
-                            label="Department *"
-                            labelFor="department"
+                            label="Semester*"
+                            labelFor="semester"
                             attributes={{
-                                name: "department",
-                                value: formik.values.department,
+                                name: "semester",
+                                value: formik.values.semester,
                                 onChange: formik.handleChange,
                                 onBlur: formik.handleBlur,
                             }}
                             error={
-                                formik.touched.department && formik.errors.department
-                                    ? formik.errors.department
+                                formik.touched.semester && formik.errors.semester
+                                    ? formik.errors.semester
                                     : undefined
                             }
                         >
-                            <option value="">Select department</option>
-                            {departments.map((dept) => (
+                            <option value="">Select semester</option>
+                            {semesters.map((dept) => (
                                 <option key={dept} value={dept}>
                                     {dept}
                                 </option>
@@ -206,7 +206,7 @@ const Programs = () => {
                                     <span className="font-bold text-gray-900">{program.programName}</span>
                                 </div>
                                 <p className="text-sm text-gray-600 mb-1">
-                                    {program.department} • {program.duration} {program.duration === 1 ? "year" : "years"}
+                                    {program.semester} • {program.duration} {program.duration === 1 ? "year" : "years"}
                                 </p>
                                 <p className="text-sm text-gray-500">
                                     Participants enrolled: {program.participantsEnrolled}

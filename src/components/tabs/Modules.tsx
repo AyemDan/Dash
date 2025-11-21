@@ -11,7 +11,7 @@ interface Module {
     moduleId: string;
     moduleName: string;
     credits: number;
-    department: string;
+    program: string;
 }
 
 const Modules = () => {
@@ -21,33 +21,33 @@ const Modules = () => {
             moduleId: "CS101",
             moduleName: "Introduction to Computer Science",
             credits: 3,
-            department: "Computer Science",
+            program: "Computer Science",
         },
         {
             id: "2",
             moduleId: "CS201",
             moduleName: "Object-Oriented Programming",
             credits: 4,
-            department: "Computer Science",
+            program: "Computer Science",
         },
         {
             id: "3",
             moduleId: "CS301",
             moduleName: "Data Structures & Algorithms",
             credits: 4,
-            department: "Computer Science",
+            program: "Computer Science",
         },
         {
             id: "4",
             moduleId: "CS302",
             moduleName: "Database Systems",
             credits: 3,
-            department: "Computer Science",
+            program: "Computer Science",
         },
     ]);
 
     const creditsOptions = [1, 2, 3, 4, 5, 6];
-    const departments = [
+    const programs = [
         "Computer Science",
         "Mathematics",
         "Physics",
@@ -65,7 +65,7 @@ const Modules = () => {
             .min(3, "Module Name must be at least 3 characters"),
         credits: Yup.string()
             .required("Credits is required"),
-        department: Yup.string()
+        program: Yup.string()
             .required("Department is required"),
     });
 
@@ -74,7 +74,7 @@ const Modules = () => {
             moduleId: "",
             moduleName: "",
             credits: "",
-            department: "",
+            program: "",
         },
         validationSchema,
         onSubmit: (values) => {
@@ -83,7 +83,7 @@ const Modules = () => {
                 moduleId: values.moduleId,
                 moduleName: values.moduleName,
                 credits: parseInt(values.credits),
-                department: values.department,
+                program: values.program,
             };
             setModules([...modules, newModule]);
             formik.resetForm();
@@ -110,25 +110,6 @@ const Modules = () => {
 
                 <form onSubmit={formik.handleSubmit} className="space-y-4">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <Input
-                            label="Module ID *"
-                            labelFor="moduleId"
-                            attributes={{
-                                type: "text",
-                                name: "moduleId",
-                                placeholder: "CS501",
-                                value: formik.values.moduleId,
-                                onChange: formik.handleChange,
-                                onBlur: formik.handleBlur,
-                            }}
-                            error={
-                                formik.touched.moduleId && formik.errors.moduleId
-                                    ? formik.errors.moduleId
-                                    : undefined
-                            }
-                            note="(e.g., CS501)"
-                        />
-
                         <Input
                             label="Module Name *"
                             labelFor="moduleName"
@@ -172,22 +153,22 @@ const Modules = () => {
                         </Select>
 
                         <Select
-                            label="Department *"
-                            labelFor="department"
+                            label="Program"
+                            labelFor="program"
                             attributes={{
-                                name: "department",
-                                value: formik.values.department,
+                                name: "program",
+                                value: formik.values.program,
                                 onChange: formik.handleChange,
                                 onBlur: formik.handleBlur,
                             }}
                             error={
-                                formik.touched.department && formik.errors.department
-                                    ? formik.errors.department
+                                formik.touched.program && formik.errors.program
+                                    ? formik.errors.program
                                     : undefined
                             }
                         >
-                            <option value="">Select department</option>
-                            {departments.map((dept) => (
+                            <option value="">Select program</option>
+                            {programs.map((dept) => (
                                 <option key={dept} value={dept}>
                                     {dept}
                                 </option>
@@ -238,7 +219,7 @@ const Modules = () => {
                                     <span className="text-gray-900">{module.moduleName}</span>
                                 </div>
                                 <p className="text-sm text-gray-600">
-                                    {module.credits} {module.credits === 1 ? "credit" : "credits"} • {module.department}
+                                    {module.credits} {module.credits === 1 ? "credit" : "credits"} • {module.program}
                                 </p>
                             </div>
                             <button

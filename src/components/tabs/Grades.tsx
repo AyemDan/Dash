@@ -7,7 +7,6 @@ interface Enrollment {
     moduleCode: string;
     moduleName: string;
     credits: number;
-    instructor: string;
     progress: number;
     grade: string | null;
     status: "Registered" | "In Progress" | "Completed" | "Dropped";
@@ -30,7 +29,6 @@ const Grades = () => {
             moduleCode: "CS301",
             moduleName: "Data Structures & Algorithms",
             credits: 4,
-            instructor: "Dr. Smith",
             progress: 100,
             grade: "A",
             status: "Completed",
@@ -42,7 +40,6 @@ const Grades = () => {
             moduleCode: "CS302",
             moduleName: "Database Systems",
             credits: 3,
-            instructor: "Prof. Johnson",
             progress: 100,
             grade: "A-",
             status: "Completed",
@@ -54,7 +51,6 @@ const Grades = () => {
             moduleCode: "CS401",
             moduleName: "Machine Learning",
             credits: 4,
-            instructor: "Dr. Williams",
             progress: 75,
             grade: "B+",
             status: "In Progress",
@@ -66,7 +62,6 @@ const Grades = () => {
             moduleCode: "CS402",
             moduleName: "Software Engineering",
             credits: 3,
-            instructor: "Prof. Davis",
             progress: 20,
             grade: null,
             status: "Registered",
@@ -78,7 +73,6 @@ const Grades = () => {
             moduleCode: "MATH301",
             moduleName: "Statistics",
             credits: 3,
-            instructor: "Dr. Brown",
             progress: 100,
             grade: "A",
             status: "Completed",
@@ -91,7 +85,6 @@ const Grades = () => {
             moduleCode: "IT201",
             moduleName: "Network Fundamentals",
             credits: 3,
-            instructor: "Prof. Wilson",
             progress: 100,
             grade: "A",
             status: "Completed",
@@ -103,7 +96,6 @@ const Grades = () => {
             moduleCode: "IT202",
             moduleName: "Web Development",
             credits: 4,
-            instructor: "Dr. Martinez",
             progress: 100,
             grade: "A-",
             status: "Completed",
@@ -115,7 +107,6 @@ const Grades = () => {
             moduleCode: "IT301",
             moduleName: "Cybersecurity",
             credits: 3,
-            instructor: "Prof. Anderson",
             progress: 70,
             grade: "B+",
             status: "In Progress",
@@ -127,7 +118,6 @@ const Grades = () => {
             moduleCode: "IT302",
             moduleName: "Cloud Computing",
             credits: 3,
-            instructor: "Dr. Thompson",
             progress: 15,
             grade: null,
             status: "Registered",
@@ -140,7 +130,6 @@ const Grades = () => {
             moduleCode: "DS401",
             moduleName: "Advanced Machine Learning",
             credits: 4,
-            instructor: "Dr. Chen",
             progress: 100,
             grade: "A",
             status: "Completed",
@@ -152,7 +141,6 @@ const Grades = () => {
             moduleCode: "DS402",
             moduleName: "Big Data Analytics",
             credits: 3,
-            instructor: "Prof. Lee",
             progress: 100,
             grade: "A",
             status: "Completed",
@@ -164,7 +152,6 @@ const Grades = () => {
             moduleCode: "DS403",
             moduleName: "Deep Learning",
             credits: 4,
-            instructor: "Dr. Kumar",
             progress: 65,
             grade: "A-",
             status: "In Progress",
@@ -176,7 +163,6 @@ const Grades = () => {
             moduleCode: "DS404",
             moduleName: "Data Visualization",
             credits: 3,
-            instructor: "Prof. Garcia",
             progress: 25,
             grade: null,
             status: "Registered",
@@ -189,7 +175,6 @@ const Grades = () => {
             moduleCode: "SE101",
             moduleName: "Introduction to Programming",
             credits: 4,
-            instructor: "Prof. White",
             progress: 100,
             grade: "A-",
             status: "Completed",
@@ -201,7 +186,6 @@ const Grades = () => {
             moduleCode: "SE102",
             moduleName: "Software Design Principles",
             credits: 3,
-            instructor: "Dr. Taylor",
             progress: 70,
             grade: "B+",
             status: "In Progress",
@@ -213,7 +197,6 @@ const Grades = () => {
             moduleCode: "MATH101",
             moduleName: "Calculus I",
             credits: 4,
-            instructor: "Prof. Miller",
             progress: 40,
             grade: null,
             status: "Registered",
@@ -225,7 +208,6 @@ const Grades = () => {
             moduleCode: "ENG101",
             moduleName: "Technical Writing",
             credits: 3,
-            instructor: "Dr. Roberts",
             progress: 20,
             grade: null,
             status: "Registered",
@@ -366,7 +348,7 @@ const Grades = () => {
                                                         <span className="text-gray-900">{enrollment.moduleName}</span>
                                                     </div>
                                                     <p className="text-sm text-gray-600">
-                                                        {enrollment.instructor} • {enrollment.semester || "N/A"} • {enrollment.credits} {enrollment.credits === 1 ? "credit" : "credits"}
+                                                 {enrollment.semester || "N/A"} • {enrollment.credits} {enrollment.credits === 1 ? "credit" : "credits"}
                                                     </p>
                                                 </div>
                                                 <div className="flex items-center gap-3 ml-6">
