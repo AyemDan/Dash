@@ -1,5 +1,4 @@
-﻿import { useState } from "react";
-import type { ComponentType } from "react";
+﻿import type { ComponentType } from "react";
 import {
     LuBookOpen,
     LuGraduationCap,
@@ -14,19 +13,22 @@ import Enrollments from "../components/tabs/Enrollments.tsx";
 import Grades from "../components/tabs/Grades.tsx";
 import { AiTwotonePieChart } from "react-icons/ai";
 import { FaRegFileLines } from "react-icons/fa6";
+import { useAppSelector, useAppDispatch } from "../store/hooks.ts";
+import { setActiveTab } from "../store/features/app.ts";
+import type { RootState } from "../store/store.ts";
 
 type TabType = "import-export" | "modules" | "programs" | "participants" | "enrollments" | "grades";
 
 interface TabConfig {
     id: TabType;
     label: string;
-    icon: ComponentType<{ className?: string }> | ComponentType<{ isActive?: boolean; color?: string }>;
+    icon: ComponentType<{ className?: string }>;
     color?: string;
-    isCustom?: boolean;
 }
 
 const Dashboard = () => {
-    const [activeTab, setActiveTab] = useState<TabType>("import-export");
+    const { activeTab } = useAppSelector((state: RootState) => state.app);
+    const dispatch = useAppDispatch();
 
     const tabs: TabConfig[] = [
         {
@@ -34,7 +36,6 @@ const Dashboard = () => {
             label: "Import/Export",
             icon: FaRegFileLines,
             color: "text-gray-900",
-            isCustom: true,
         },
         {
             id: "modules",
@@ -107,22 +108,17 @@ const Dashboard = () => {
                         return (
                             <button
                                 key={tab.id}
-                                onClick={() => setActiveTab(tab.id)}
+                                onClick={() => dispatch(setActiveTab(tab.id))}
                                 className={`
                                     flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg font-medium text-[13px]
                                     transition-all duration-200 whitespace-nowrap cursor-pointer
-                                    ${
-                                        isActive
-                                            ? "bg-white"
-                                            : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+                                    ${isActive
+                                        ? "bg-white"
+                                        : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
                                     }
                                 `}
                             >
-                                {tab.isCustom ? (
-                                    <Icon isActive={isActive} color={tab.color} />
-                                ) : (
-                                    <Icon className={`h-5 w-5 ${isActive ? tab.color : "text-gray-500"}`} />
-                                )}
+                                <Icon className={`h-5 w-5 ${isActive ? tab.color : "text-gray-500"}`} />
                                 <span className={`${isActive ? tab.color : "text-gray-500"}`}>
                                     {tab.label}
                                 </span>
