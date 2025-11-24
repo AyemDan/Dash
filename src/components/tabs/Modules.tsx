@@ -1,99 +1,118 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useFormik } from "formik";
 import * as Yup from "yup";
 import { LuBookOpen, LuFileText, LuPlus, LuTrash2 } from "react-icons/lu";
 import Input from "../Input.tsx";
 import Select from "../Select.tsx";
 import ActionButton from "../ActionButton.tsx";
+import { api } from "../../utils/api.ts";
 
 interface Module {
     id: string;
-    moduleId: string;
-    moduleName: string;
+    code: string;
+    title: string;
     credits: number;
-    program: string;
+    isActive: boolean;
+    program: string | any;
 }
 
+interface Program {
+    id: string;
+    name: string;
+}
 const Modules = () => {
-    const [modules, setModules] = useState<Module[]>([
-        {
-            id: "1",
-            moduleId: "CS101",
-            moduleName: "Introduction to Computer Science",
-            credits: 3,
-            program: "Computer Science",
-        },
-        {
-            id: "2",
-            moduleId: "CS201",
-            moduleName: "Object-Oriented Programming",
-            credits: 4,
-            program: "Computer Science",
-        },
-        {
-            id: "3",
-            moduleId: "CS301",
-            moduleName: "Data Structures & Algorithms",
-            credits: 4,
-            program: "Computer Science",
-        },
-        {
-            id: "4",
-            moduleId: "CS302",
-            moduleName: "Database Systems",
-            credits: 3,
-            program: "Computer Science",
-        },
-    ]);
+    const [modules, setModules] = useState<Module[]>([]);
+    const [programs, setPrograms] = useState<Program[]>([]);
+    const [isLoading, setIsLoading] = useState(false);
 
-    const creditsOptions = [1, 2, 3, 4, 5, 6];
-    const programs = [
-        "Computer Science",
-        "Mathematics",
-        "Physics",
-        "Chemistry",
-        "Biology",
-        "Engineering",
-    ];
+    const creditsOptions = [1, 2, 3, 4];
+
+    useEffect(() => {
+        fetchData();
+    }, []);
+
+    const fetchData = async () => {
+        // Fetch Modules
+        try {
+            const modulesData = await api.get("/modules");
+            setModules(Array.isArray(modulesData) ? modulesData : []);
+        } catch (error) {
+            console.error("Failed to fetch modules:", error);
+            setModules([]);
+        }
+
+        try {
+            const programsData = await api.get("/programs");
+            console.log("Raw programs data:", programsData);
+            if (Array.isArray(programsData)) {
+                setPrograms(programsData.map((p: any) => ({
+                    id: p._id,
+                    name: p.name,
+                    // duration: p.duration,
+                    // credits: p.credits,
+                    // _v: p._v,
+                    // modules: p.modules,
+                    // isActive: p.isActive,
+                    // createdAt: p.createdAt,
+                    // updatedAt: p.updatedAt,
+                })));
+            } else {
+                console.log("Programs data is not an array:", programsData);
+                setPrograms([]);
+            }
+        } catch (error) {
+            console.error("Failed to fetch programs:", error);
+            setPrograms([]);
+        }
+    };
 
     const validationSchema = Yup.object({
-        moduleId: Yup.string()
-            .required("Module ID is required")
-            .matches(/^[A-Z]{2}\d{3}$/, "Module ID must be in format like CS501"),
-        moduleName: Yup.string()
+        title: Yup.string()
             .required("Module Name is required")
             .min(3, "Module Name must be at least 3 characters"),
         credits: Yup.string()
             .required("Credits is required"),
         program: Yup.string()
-            .required("Department is required"),
+            .required("Program is required"),
     });
 
     const formik = useFormik({
         initialValues: {
-            moduleId: "",
-            moduleName: "",
+            title: "",
+            isActive: false,
             credits: "",
             program: "",
         },
         validationSchema,
-        onSubmit: (values) => {
-            const newModule: Module = {
-                id: Date.now().toString(),
-                moduleId: values.moduleId,
-                moduleName: values.moduleName,
-                credits: parseInt(values.credits),
-                program: values.program,
-            };
-            setModules([...modules, newModule]);
-            formik.resetForm();
-            console.log("Module added:", newModule);
+        onSubmit: async (values) => {
+            setIsLoading(true);
+            try {
+                const newModule = await api.post("/modules", {
+                    title: values.title,
+                    credits: parseInt(values.credits),
+                    program: values.program,
+                    isActive: values.isActive,
+                });
+                setModules([...modules, newModule]);
+                formik.resetForm();
+                console.log("Module added:", newModule);
+            } catch (error) {
+                console.error("Failed to add module:", error);
+            } finally {
+                setIsLoading(false);
+            }
         },
     });
 
-    const handleDelete = (id: string) => {
-        setModules(modules.filter((module) => module.id !== id));
-        console.log("Module deleted:", id);
+    const handleDelete = async (id: string) => {
+        if (!window.confirm("Are you sure you want to delete this module?")) return;
+        try {
+            await api.delete(`/modules/${id}`);
+            setModules(modules.filter((module) => module.id !== id));
+            console.log("Module deleted:", id);
+        } catch (error) {
+            console.error("Failed to delete module:", error);
+        }
     };
 
     return (
@@ -112,18 +131,18 @@ const Modules = () => {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <Input
                             label="Module Name *"
-                            labelFor="moduleName"
+                            labelFor="title"
                             attributes={{
                                 type: "text",
-                                name: "moduleName",
-                                placeholder: "Advanced Programming",
-                                value: formik.values.moduleName,
+                                name: "title",
+                                placeholder: "",
+                                value: formik.values.title,
                                 onChange: formik.handleChange,
                                 onBlur: formik.handleBlur,
                             }}
                             error={
-                                formik.touched.moduleName && formik.errors.moduleName
-                                    ? formik.errors.moduleName
+                                formik.touched.title && formik.errors.title
+                                    ? formik.errors.title
                                     : undefined
                             }
                             note="(e.g., Advanced Programming)"
@@ -168,9 +187,9 @@ const Modules = () => {
                             }
                         >
                             <option value="">Select program</option>
-                            {programs.map((dept) => (
-                                <option key={dept} value={dept}>
-                                    {dept}
+                            {programs.map((programs) => (
+                                <option key={programs.id} value={programs.id}>
+                                    {programs.name}
                                 </option>
                             ))}
                         </Select>
@@ -186,8 +205,9 @@ const Modules = () => {
                             }
                             attributes={{
                                 type: "submit",
-                                disabled: !formik.isValid,
+                                disabled: !formik.isValid || isLoading,
                             }}
+                            loading={isLoading}
                             width="full"
                             paddingX="px-4"
                             backgroundColor="#6B7280"
@@ -197,7 +217,6 @@ const Modules = () => {
                 </form>
             </div>
 
-            {/* Current Module Catalog Section */}
             <div className="bg-white rounded-xl border border-gray-200 p-6">
                 <div className="flex items-center gap-3 mb-4">
                     <LuFileText className="h-6 w-6 text-amber-900" />
@@ -214,12 +233,12 @@ const Modules = () => {
                         >
                             <div className="flex-1">
                                 <div className="flex items-center gap-2 mb-1">
-                                    <span className="font-bold text-gray-900">{module.moduleId}</span>
+                                    <span className="font-bold text-gray-900">{module.code}</span>
                                     <span className="text-gray-600">-</span>
-                                    <span className="text-gray-900">{module.moduleName}</span>
+                                    <span className="text-gray-900">{module.title}</span>
                                 </div>
                                 <p className="text-sm text-gray-600">
-                                    {module.credits} {module.credits === 1 ? "credit" : "credits"} • {module.program}
+                                    {module.credits} {module.credits === 1 ? "credit" : "credits"} • {typeof module.program === 'object' ? module.program.name : module.program}
                                 </p>
                             </div>
                             <button

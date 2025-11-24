@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { LuChevronDown, LuSearch } from "react-icons/lu";
+import { api } from "../../utils/api.ts";
 
 interface Enrollment {
     id: string;
@@ -13,207 +14,44 @@ interface Enrollment {
     semester?: string;
 }
 
-const Grades = () => {
-    const participants = [
-        { id: "1", name: "John Smith", participantId: "ST001" },
-        { id: "2", name: "Emily Johnson", participantId: "ST002" },
-        { id: "3", name: "Michael Brown", participantId: "ST003" },
-        { id: "4", name: "Sarah Davis", participantId: "ST004" },
-    ];
+interface Participant {
+    id: string;
+    name: string;
+    participantId: string;
+}
 
-    const [enrollments, setEnrollments] = useState<Enrollment[]>([
-        // John Smith (ST001) - 5 enrollments
-        {
-            id: "1",
-            participantId: "1",
-            moduleCode: "CS301",
-            moduleName: "Data Structures & Algorithms",
-            credits: 4,
-            progress: 100,
-            grade: "A",
-            status: "Completed",
-            semester: "2Qtr",
-        },
-        {
-            id: "2",
-            participantId: "1",
-            moduleCode: "CS302",
-            moduleName: "Database Systems",
-            credits: 3,
-            progress: 100,
-            grade: "A-",
-            status: "Completed",
-            semester: "2Qtr",
-        },
-        {
-            id: "3",
-            participantId: "1",
-            moduleCode: "CS401",
-            moduleName: "Machine Learning",
-            credits: 4,
-            progress: 75,
-            grade: "B+",
-            status: "In Progress",
-            semester: "1Qtr",
-        },
-        {
-            id: "4",
-            participantId: "1",
-            moduleCode: "CS402",
-            moduleName: "Software Engineering",
-            credits: 3,
-            progress: 20,
-            grade: null,
-            status: "Registered",
-            semester: "1Qtr",
-        },
-        {
-            id: "5",
-            participantId: "1",
-            moduleCode: "MATH301",
-            moduleName: "Statistics",
-            credits: 3,
-            progress: 100,
-            grade: "A",
-            status: "Completed",
-            semester: "2Qtr",
-        },
-        // Emily Johnson (ST002) - 4 enrollments
-        {
-            id: "6",
-            participantId: "2",
-            moduleCode: "IT201",
-            moduleName: "Network Fundamentals",
-            credits: 3,
-            progress: 100,
-            grade: "A",
-            status: "Completed",
-            semester: "2Qtr",
-        },
-        {
-            id: "7",
-            participantId: "2",
-            moduleCode: "IT202",
-            moduleName: "Web Development",
-            credits: 4,
-            progress: 100,
-            grade: "A-",
-            status: "Completed",
-            semester: "2Qtr",
-        },
-        {
-            id: "8",
-            participantId: "2",
-            moduleCode: "IT301",
-            moduleName: "Cybersecurity",
-            credits: 3,
-            progress: 70,
-            grade: "B+",
-            status: "In Progress",
-            semester: "1Qtr",
-        },
-        {
-            id: "9",
-            participantId: "2",
-            moduleCode: "IT302",
-            moduleName: "Cloud Computing",
-            credits: 3,
-            progress: 15,
-            grade: null,
-            status: "Registered",
-            semester: "1Qtr",
-        },
-        // Michael Brown (ST003) - 4 enrollments
-        {
-            id: "10",
-            participantId: "3",
-            moduleCode: "DS401",
-            moduleName: "Advanced Machine Learning",
-            credits: 4,
-            progress: 100,
-            grade: "A",
-            status: "Completed",
-            semester: "2Qtr",
-        },
-        {
-            id: "11",
-            participantId: "3",
-            moduleCode: "DS402",
-            moduleName: "Big Data Analytics",
-            credits: 3,
-            progress: 100,
-            grade: "A",
-            status: "Completed",
-            semester: "2Qtr",
-        },
-        {
-            id: "12",
-            participantId: "3",
-            moduleCode: "DS403",
-            moduleName: "Deep Learning",
-            credits: 4,
-            progress: 65,
-            grade: "A-",
-            status: "In Progress",
-            semester: "1Qtr",
-        },
-        {
-            id: "13",
-            participantId: "3",
-            moduleCode: "DS404",
-            moduleName: "Data Visualization",
-            credits: 3,
-            progress: 25,
-            grade: null,
-            status: "Registered",
-            semester: "1Qtr",
-        },
-        // Sarah Davis (ST004) - 4 enrollments
-        {
-            id: "14",
-            participantId: "4",
-            moduleCode: "SE101",
-            moduleName: "Introduction to Programming",
-            credits: 4,
-            progress: 100,
-            grade: "A-",
-            status: "Completed",
-            semester: "2Qtr",
-        },
-        {
-            id: "15",
-            participantId: "4",
-            moduleCode: "SE102",
-            moduleName: "Software Design Principles",
-            credits: 3,
-            progress: 70,
-            grade: "B+",
-            status: "In Progress",
-            semester: "1Qtr",
-        },
-        {
-            id: "16",
-            participantId: "4",
-            moduleCode: "MATH101",
-            moduleName: "Calculus I",
-            credits: 4,
-            progress: 40,
-            grade: null,
-            status: "Registered",
-            semester: "1Qtr",
-        },
-        {
-            id: "17",
-            participantId: "4",
-            moduleCode: "ENG101",
-            moduleName: "Technical Writing",
-            credits: 3,
-            progress: 20,
-            grade: null,
-            status: "Registered",
-            semester: "1Qtr",
-        },
-    ]);
+const Grades = () => {
+    const [participants, setParticipants] = useState<Participant[]>([]);
+    const [enrollments, setEnrollments] = useState<Enrollment[]>([]);
+
+    useEffect(() => {
+        fetchData();
+    }, []);
+
+    const fetchData = async () => {
+        try {
+            const [enrollmentsData, participantsData] = await Promise.all([
+                api.get("/enrollments"),
+                api.get("/participants")
+            ]);
+
+            setEnrollments(Array.isArray(enrollmentsData) ? enrollmentsData : []);
+
+            if (Array.isArray(participantsData)) {
+                setParticipants(participantsData.map((p: any) => ({
+                    id: p.id,
+                    name: p.fullName,
+                    participantId: p.participantId
+                })));
+            } else {
+                setParticipants([]);
+            }
+        } catch (error) {
+            console.error("Failed to fetch data:", error);
+            setEnrollments([]);
+            setParticipants([]);
+        }
+    };
 
     const [openSections, setOpenSections] = useState<Set<string>>(new Set());
     const [searchQuery, setSearchQuery] = useState<string>("");
@@ -348,7 +186,7 @@ const Grades = () => {
                                                         <span className="text-gray-900">{enrollment.moduleName}</span>
                                                     </div>
                                                     <p className="text-sm text-gray-600">
-                                                 {enrollment.semester || "N/A"} • {enrollment.credits} {enrollment.credits === 1 ? "credit" : "credits"}
+                                                        {enrollment.semester || "N/A"} • {enrollment.credits} {enrollment.credits === 1 ? "credit" : "credits"}
                                                     </p>
                                                 </div>
                                                 <div className="flex items-center gap-3 ml-6">

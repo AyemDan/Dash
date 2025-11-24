@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useFormik } from "formik";
 import * as Yup from "yup";
 import { LuUsers, LuPlus, LuUserX } from "react-icons/lu";
 import Input from "../Input.tsx";
 import Select from "../Select.tsx";
 import ActionButton from "../ActionButton.tsx";
+import { api } from "../../utils/api.ts";
 
 interface Participant {
     id: string;
@@ -18,56 +19,35 @@ interface Participant {
 }
 
 const Participants = () => {
-    const [participants, setParticipants] = useState<Participant[]>([
-        {
-            id: "1",
-            participantId: "ST001",
-            fullName: "John Smith",
-            email: "john.smith@university.edu",
-            password: "john123",
-            program: "Computer Science",
-            graduationYear: 2025,
-            modulesCount: 5,
-        },
-        {
-            id: "2",
-            participantId: "ST002",
-            fullName: "Emily Johnson",
-            email: "emily.johnson@university.edu",
-            password: "emily456",
-            program: "Information Technology",
-            graduationYear: 2026,
-            modulesCount: 4,
-        },
-        {
-            id: "3",
-            participantId: "ST003",
-            fullName: "Michael Brown",
-            email: "michael.brown@university.edu",
-            password: "mike789",
-            program: "Data Science",
-            graduationYear: 2025,
-            modulesCount: 4,
-        },
-        {
-            id: "4",
-            participantId: "ST004",
-            fullName: "Sarah Davis",
-            email: "sarah.davis@university.edu",
-            password: "sarah321",
-            program: "Software Engineering",
-            graduationYear: 2027,
-            modulesCount: 4,
-        },
-    ]);
+    const [participants, setParticipants] = useState<Participant[]>([]);
+    const [programs, setPrograms] = useState<string[]>([]);
+    const [isLoading, setIsLoading] = useState(false);
 
-    const programs = [
-        "Computer Science",
-        "Information Technology",
-        "Data Science",
-        "Software Engineering",
-        "Business Administration",
-    ];
+    useEffect(() => {
+        fetchData();
+    }, []);
+
+    const fetchData = async () => {
+        try {
+            const [participantsData, programsData] = await Promise.all([
+                api.get("/participants"),
+                api.get("/programs")
+            ]);
+
+            // Ensure data is an array before setting state
+            setParticipants(Array.isArray(participantsData) ? participantsData : []);
+
+            if (Array.isArray(programsData)) {
+                setPrograms(programsData.map((p: any) => p.programName));
+            } else {
+                setPrograms([]);
+            }
+        } catch (error) {
+            console.error("Failed to fetch data:", error);
+            setParticipants([]); // Fallback to empty array on error
+            setPrograms([]);
+        }
+    };
 
     const graduationYears = Array.from({ length: 10 }, (_, i) => new Date().getFullYear() + i);
     const semesters = ["1Qtr", "2Qtr", "3Qtr", "4Qtr"];
@@ -100,7 +80,8 @@ const Participants = () => {
             currentSemester: "1Qtr",
         },
         validationSchema,
-        onSubmit: (values) => {
+        onSubmit: async (values) => {
+            setIsLoading(true);
             // Auto-generate password if empty
             let generatedPassword = values.password;
             if (!generatedPassword) {
@@ -109,25 +90,36 @@ const Participants = () => {
                 generatedPassword = firstName + lastThreeDigits;
             }
 
-            const newParticipant: Participant = {
-                id: Date.now().toString(),
-                participantId: values.participantId,
-                fullName: values.fullName,
-                email: values.email,
-                password: generatedPassword,
-                program: values.program,
-                graduationYear: parseInt(values.graduationYear),
-                modulesCount: 0,
-            };
-            setParticipants([...participants, newParticipant]);
-            formik.resetForm();
-            console.log("Participant added:", newParticipant);
+            try {
+                const newParticipant = await api.post("/participants", {
+                    participantId: values.participantId,
+                    fullName: values.fullName,
+                    email: values.email,
+                    password: generatedPassword,
+                    program: values.program,
+                    graduationYear: parseInt(values.graduationYear),
+                    modulesCount: 0,
+                });
+                setParticipants([...participants, newParticipant]);
+                formik.resetForm();
+                console.log("Participant added:", newParticipant);
+            } catch (error) {
+                console.error("Failed to add participant:", error);
+            } finally {
+                setIsLoading(false);
+            }
         },
     });
 
-    const handleDelete = (id: string) => {
-        setParticipants(participants.filter((participant) => participant.id !== id));
-        console.log("Participant deleted:", id);
+    const handleDelete = async (id: string) => {
+        if (!window.confirm("Are you sure you want to delete this participant?")) return;
+        try {
+            await api.delete(`/participants/${id}`);
+            setParticipants(participants.filter((participant) => participant.id !== id));
+            console.log("Participant deleted:", id);
+        } catch (error) {
+            console.error("Failed to delete participant:", error);
+        }
     };
 
     return (
@@ -324,8 +316,9 @@ const Participants = () => {
                             }
                             attributes={{
                                 type: "submit",
-                                disabled: !formik.isValid,
+                                disabled: !formik.isValid || isLoading,
                             }}
+                            loading={isLoading}
                             width="full"
                             paddingX="px-4"
                             backgroundColor="#000000"

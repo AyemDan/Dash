@@ -1,9 +1,10 @@
-import { useState, useRef } from "react";
+import { useState, useEffect } from "react";
 import { useFormik } from "formik";
 import * as Yup from "yup";
 import { LuPlus, LuTrash2 } from "react-icons/lu";
 import Select from "../Select.tsx";
 import ActionButton from "../ActionButton.tsx";
+import { api } from "../../utils/api.ts";
 
 interface Enrollment {
     id: string;
@@ -16,165 +17,92 @@ interface Enrollment {
     status: "Registered" | "In Progress" | "Completed" | "Dropped";
 }
 
+interface Participant {
+    id: string;
+    name: string;
+    modules: any[];
+    enrolledPrograms: string[];
+}
+
+interface Module {
+    id: string;
+    code: string;
+    title: string;
+    credits: number;
+    programId: any;
+}
+
+interface Program {
+    id: string;
+    name: string;
+}
+
 const Enrollments = () => {
-    const enrollmentIdCounter = useRef(14); // Start after existing enrollments
+    // enrollmentIdCounter removed as backend handles IDs
 
-    const participants = [
-        { id: "1", name: "John Smith", participantId: "ST001" },
-        { id: "2", name: "Emily Johnson", participantId: "ST002" },
-        { id: "3", name: "Michael Brown", participantId: "ST003" },
-        { id: "4", name: "Sarah Davis", participantId: "ST004" },
-    ];
 
-    const [enrollments, setEnrollments] = useState<Enrollment[]>([
-        // Sarah Davis (ST004) - 4 enrollments
-        {
-            id: "1",
-            participantId: "4",
-            moduleCode: "SE101",
-            moduleName: "Introduction to Programming",
-            credits: 4,
-            progress: 100,
-            grade: "A-",
-            status: "Completed",
-        },
-        {
-            id: "2",
-            participantId: "4",
-            moduleCode: "SE102",
-            moduleName: "Software Design Principles",
-            credits: 3,
-            progress: 70,
-            grade: "B+",
-            status: "In Progress",
-        },
-        {
-            id: "3",
-            participantId: "4",
-            moduleCode: "MATH101",
-            moduleName: "Calculus I",
-            credits: 4,
-            progress: 40,
-            grade: null,
-            status: "Registered",
-        },
-        {
-            id: "4",
-            participantId: "4",
-            moduleCode: "ENG101",
-            moduleName: "Technical Writing",
-            credits: 3,
-            progress: 20,
-            grade: null,
-            status: "Registered",
-        },
-        // John Smith (ST001) - 3 enrollments
-        {
-            id: "5",
-            participantId: "1",
-            moduleCode: "CS101",
-            moduleName: "Introduction to Computer Science",
-            credits: 3,
-            progress: 85,
-            grade: "A",
-            status: "In Progress",
-        },
-        {
-            id: "6",
-            participantId: "1",
-            moduleCode: "CS201",
-            moduleName: "Object-Oriented Programming",
-            credits: 4,
-            progress: 60,
-            grade: "B",
-            status: "In Progress",
-        },
-        {
-            id: "7",
-            participantId: "1",
-            moduleCode: "MATH101",
-            moduleName: "Calculus I",
-            credits: 4,
-            progress: 30,
-            grade: null,
-            status: "Registered",
-        },
-        // Emily Johnson (ST002) - 3 enrollments
-        {
-            id: "8",
-            participantId: "2",
-            moduleCode: "CS301",
-            moduleName: "Data Structures & Algorithms",
-            credits: 4,
-            progress: 90,
-            grade: "A+",
-            status: "Completed",
-        },
-        {
-            id: "9",
-            participantId: "2",
-            moduleCode: "CS302",
-            moduleName: "Database Systems",
-            credits: 3,
-            progress: 50,
-            grade: null,
-            status: "In Progress",
-        },
-        {
-            id: "10",
-            participantId: "2",
-            moduleCode: "ENG101",
-            moduleName: "Technical Writing",
-            credits: 3,
-            progress: 15,
-            grade: null,
-            status: "Registered",
-        },
-        {
-            id: "11",
-            participantId: "3",
-            moduleCode: "CS101",
-            moduleName: "Introduction to Computer Science",
-            credits: 3,
-            progress: 75,
-            grade: "B+",
-            status: "In Progress",
-        },
-        {
-            id: "12",
-            participantId: "3",
-            moduleCode: "MATH101",
-            moduleName: "Calculus I",
-            credits: 4,
-            progress: 55,
-            grade: "B-",
-            status: "In Progress",
-        },
-        {
-            id: "13",
-            participantId: "3",
-            moduleCode: "CS201",
-            moduleName: "Object-Oriented Programming",
-            credits: 4,
-            progress: 25,
-            grade: null,
-            status: "Registered",
-        },
-    ]);
+    const [participants, setParticipants] = useState<Participant[]>([]);
+    const [modules, setModules] = useState<Module[]>([]);
+    const [programs, setPrograms] = useState<Program[]>([]);
+    const [isLoading, setIsLoading] = useState(false);
 
-    const modules = [
-        { id: "1", moduleId: "CS101", moduleName: "Introduction to Computer Science" },
-        { id: "2", moduleId: "CS201", moduleName: "Object-Oriented Programming" },
-        { id: "3", moduleId: "CS301", moduleName: "Data Structures & Algorithms" },
-        { id: "4", moduleId: "CS302", moduleName: "Database Systems" },
-    ];
+    useEffect(() => {
+        fetchData();
+    }, []);
+
+    const fetchData = async () => {
+        try {
+            const [participantsData, modulesData, programsData] = await Promise.all([
+                api.get("/participants"),
+                api.get("/modules"),
+                api.get("/programs")
+            ]);
+
+            console.log(participantsData.results);
+            if (Array.isArray(participantsData.results)) {
+                setParticipants(participantsData.results.map((p: any) => ({
+                    id: p._id,
+                    name: p.name,
+                    modules: p.modules || [],
+                    enrolledPrograms: p.enrolledPrograms || []
+                })));
+            } else {
+                setParticipants([]);
+            }
+
+            if (Array.isArray(modulesData)) {
+                setModules(modulesData.map((m: any) => ({
+                    id: m.id || m._id,
+                    code: m.code,
+                    title: m.title,
+                    credits: m.credits,
+                    programId: typeof m.program === 'object' ? m.program._id : m.program
+                })));
+            } else {
+                setModules([]);
+            }
+
+            if (Array.isArray(programsData)) {
+                setPrograms(programsData.map((p: any) => ({
+                    id: p.id || p._id,
+                    name: p.name
+                })));
+            } else {
+                setPrograms([]);
+            }
+        } catch (error) {
+            console.error("Failed to fetch data:", error);
+        }
+    };
 
     const statusOptions = ["Registered", "In Progress", "Completed", "Dropped"];
-    const semesters = ["1Qtr", "2Qtr", "3Qtr", "4Qtr"];
+    const semesters = ["1st", "2nd"];
 
     const validationSchema = Yup.object({
         participant: Yup.string()
             .required("Participant is required"),
+        program: Yup.string()
+            .required("Program is required"),
         module: Yup.string()
             .required("Module is required"),
         status: Yup.string(),
@@ -184,47 +112,138 @@ const Enrollments = () => {
     const formik = useFormik({
         initialValues: {
             participant: "",
+            program: "",
             module: "",
             status: "Registered",
-            semester: "1Qtr",
+            semester: "1st",
         },
         validationSchema,
-        onSubmit: (values) => {
+        onSubmit: async (values) => {
+            setIsLoading(true);
+            const selectedParticipant = participants.find((p) => p.id === values.participant);
             const selectedModule = modules.find((m) => m.id === values.module);
-            if (selectedModule) {
-                enrollmentIdCounter.current += 1;
-                const newEnrollment: Enrollment = {
-                    id: enrollmentIdCounter.current.toString(),
-                    participantId: values.participant,
-                    moduleCode: selectedModule.moduleId,
-                    moduleName: selectedModule.moduleName,
-                    credits: 3, // Default, would come from module data
-                    progress: 0,
-                    grade: null,
-                    status: values.status as Enrollment["status"],
-                };
-                setEnrollments([...enrollments, newEnrollment]);
-                console.log("Enrollment created:", newEnrollment);
+
+            if (selectedParticipant && selectedModule) {
+                try {
+                    // Check if already enrolled
+                    const isAlreadyEnrolled = selectedParticipant.modules.some(
+                        (m: any) => (typeof m.module === 'object' ? m.module._id : m.module) === values.module
+                    );
+
+                    if (isAlreadyEnrolled) {
+                        alert("Participant is already enrolled in this module.");
+                        setIsLoading(false);
+                        return;
+                    }
+
+                    const newModuleEntry = {
+                        module: values.module,
+                        enrolledAt: new Date(),
+                        status: values.status,
+                        grades: [],
+                        finalScore: null,
+                        gradePoint: 0,
+                        gradeLetter: null
+                    };
+
+                    const updatedModules = [...selectedParticipant.modules, newModuleEntry];
+
+                    // Update enrolledPrograms if needed
+                    const updatedPrograms = selectedParticipant.enrolledPrograms.includes(values.program)
+                        ? selectedParticipant.enrolledPrograms
+                        : [...selectedParticipant.enrolledPrograms, values.program];
+
+                    // We need to send IDs for modules in the update payload if the backend expects IDs
+                    // But if we send the whole array, we must ensure existing populated modules are converted back to IDs if the backend requires it.
+                    // Assuming backend handles mixed or we should map to IDs. Safest is to map to IDs.
+                    const payloadModules = updatedModules.map((m: any) => ({
+                        ...m,
+                        module: typeof m.module === 'object' ? m.module._id : m.module
+                    }));
+
+                    await api.put(`/participants/${selectedParticipant.id}`, {
+                        modules: payloadModules,
+                        enrolledPrograms: updatedPrograms
+                    });
+
+                    // Update local state
+                    const updatedParticipant = {
+                        ...selectedParticipant,
+                        modules: updatedModules,
+                        enrolledPrograms: updatedPrograms
+                    };
+
+                    setParticipants(participants.map(p => p.id === selectedParticipant.id ? updatedParticipant : p));
+
+                    console.log("Enrollment updated for participant:", selectedParticipant.name);
+
+                    formik.resetForm({
+                        values: {
+                            participant: formik.values.participant,
+                            program: formik.values.program,
+                            module: "",
+                            status: "Registered",
+                            semester: "1st",
+                        },
+                    });
+                } catch (error) {
+                    console.error("Failed to enroll participant:", error);
+                } finally {
+                    setIsLoading(false);
+                }
+            } else {
+                setIsLoading(false);
             }
-            formik.resetForm({
-                values: {
-                    participant: formik.values.participant, // Keep selected participant
-                    module: "",
-                    status: "Registered",
-                    semester: "1Qtr",
-                },
-            });
         },
     });
 
     const selectedParticipant = participants.find((p) => p.id === formik.values.participant);
-    const filteredEnrollments = enrollments.filter(
-        (enrollment) => enrollment.participantId === formik.values.participant
-    );
 
-    const handleDelete = (enrollmentId: string) => {
-        setEnrollments(enrollments.filter((enrollment) => enrollment.id !== enrollmentId));
-        console.log("Enrollment deleted:", enrollmentId);
+    const filteredEnrollments: Enrollment[] = selectedParticipant?.modules.map((m: any) => {
+        const moduleId = typeof m.module === 'object' ? m.module._id : m.module;
+        const moduleDetails = modules.find(mod => mod.id === moduleId);
+        return {
+            id: moduleId, // Using module ID as enrollment ID for display since it's embedded
+            participantId: selectedParticipant.id,
+            moduleCode: moduleDetails?.code || (typeof m.module === 'object' ? m.module.code : 'N/A'),
+            moduleName: moduleDetails?.title || (typeof m.module === 'object' ? m.module.title : 'Unknown'),
+            credits: moduleDetails?.credits || (typeof m.module === 'object' ? m.module.credits : 0),
+            progress: 0, // Not in schema
+            grade: m.gradeLetter,
+            status: m.status
+        };
+    }) || [];
+
+    const handleDelete = async (moduleId: string) => {
+        if (!selectedParticipant) return;
+        if (!window.confirm("Are you sure you want to delete this enrollment?")) return;
+
+        try {
+            const updatedModules = selectedParticipant.modules.filter((m: any) => {
+                const mId = typeof m.module === 'object' ? m.module._id : m.module;
+                return mId !== moduleId;
+            });
+
+            const payloadModules = updatedModules.map((m: any) => ({
+                ...m,
+                module: typeof m.module === 'object' ? m.module._id : m.module
+            }));
+
+            await api.put(`/participants/${selectedParticipant.id}`, {
+                modules: payloadModules
+            });
+
+            // Update local state
+            const updatedParticipant = {
+                ...selectedParticipant,
+                modules: updatedModules
+            };
+            setParticipants(participants.map(p => p.id === selectedParticipant.id ? updatedParticipant : p));
+
+            console.log("Enrollment deleted for module:", moduleId);
+        } catch (error) {
+            console.error("Failed to delete enrollment:", error);
+        }
     };
 
     const getStatusBadgeClass = (status: Enrollment["status"]) => {
@@ -273,13 +292,39 @@ const Enrollments = () => {
                             }
                         >
                             <option value="">Choose a participant</option>
-                            {participants.map((participant) => (
-                                <option key={participant.id} value={participant.id}>
-                                    {participant.participantId} - {participant.name}
+                            {participants.map((participants) => (
+                                <option key={participants.id} value={participants.id}>
+                                    {participants.name}
                                 </option>
                             ))}
                         </Select>
-                        
+
+                        <Select
+                            label="Program *"
+                            labelFor="program"
+                            attributes={{
+                                name: "program",
+                                value: formik.values.program,
+                                onChange: (e) => {
+                                    formik.handleChange(e);
+                                    formik.setFieldValue("module", ""); // Reset module when program changes
+                                },
+                                onBlur: formik.handleBlur,
+                            }}
+                            error={
+                                formik.touched.program && formik.errors.program
+                                    ? formik.errors.program
+                                    : undefined
+                            }
+                        >
+                            <option value="">Select program</option>
+                            {programs.map((program) => (
+                                <option key={program.id} value={program.id}>
+                                    {program.name}
+                                </option>
+                            ))}
+                        </Select>
+
                         <Select
                             label="Module *"
                             labelFor="module"
@@ -288,6 +333,7 @@ const Enrollments = () => {
                                 value: formik.values.module,
                                 onChange: formik.handleChange,
                                 onBlur: formik.handleBlur,
+                                disabled: !formik.values.program
                             }}
                             error={
                                 formik.touched.module && formik.errors.module
@@ -296,11 +342,13 @@ const Enrollments = () => {
                             }
                         >
                             <option value="">Select module</option>
-                            {modules.map((module) => (
-                                <option key={module.id} value={module.id}>
-                                    {module.moduleId} - {module.moduleName}
-                                </option>
-                            ))}
+                            {modules
+                                .filter(m => !formik.values.program || m.programId === formik.values.program)
+                                .map((modules) => (
+                                    <option key={modules.id} value={modules.id}>
+                                        {modules.code} - {modules.title}
+                                    </option>
+                                ))}
                         </Select>
 
                         <Select
@@ -348,8 +396,9 @@ const Enrollments = () => {
                             }
                             attributes={{
                                 type: "submit",
-                                disabled: !formik.isValid,
+                                disabled: !formik.isValid || isLoading,
                             }}
+                            loading={isLoading}
                             width="full"
                             paddingX="px-4"
                             backgroundColor="#6B7280"
@@ -373,7 +422,7 @@ const Enrollments = () => {
                         {filteredEnrollments.length === 0 ? (
                             <p className="text-gray-500 text-center py-8">No enrollments found for this participant.</p>
                         ) : (
-                            filteredEnrollments.map((enrollment) => (
+                            filteredEnrollments.map((enrollment: Enrollment) => (
                                 <div
                                     key={enrollment.id}
                                     className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"

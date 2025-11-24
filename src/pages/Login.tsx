@@ -1,15 +1,21 @@
-﻿import { useFormik } from "formik";
+﻿import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useFormik } from "formik";
 import * as Yup from "yup";
 import Input from "../components/Input.tsx";
 import ActionButton from "../components/ActionButton.tsx";
 import { LuUser, LuLock, LuShield } from "react-icons/lu";
 
+const API_URL = "http://localhost:4000/api/auth/login"; // TODO: Update with actual API URL
+
 const Login = () => {
-    const isLoading = false;
+    const navigate = useNavigate();
+    const [isLoading, setIsLoading] = useState(false);
+    const [apiError, setApiError] = useState<string | null>(null);
 
     const validationSchema = Yup.object({
-        username: Yup.string()
-            .required("Username is required"),
+        nameId: Yup.string()
+            .required("NameId is required"),
         password: Yup.string()
             .min(6, "Password must be at least 6 characters")
             .required("Password is required"),
@@ -17,12 +23,46 @@ const Login = () => {
 
     const formik = useFormik({
         initialValues: {
-            username: "",
+            nameId: "",
             password: "",
         },
         validationSchema,
         onSubmit: async (values) => {
-            console.log(values);
+            setIsLoading(true);
+            setApiError(null);
+            try {
+                const response = await fetch(API_URL, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify(values),
+                });
+
+                if (!response.ok) {
+                    if (response.status === 401 || response.status === 400) {
+                        throw new Error("Invalid username or password");
+                    } else {
+                        throw new Error("Server error. Please try again later.");
+                    }
+                }
+
+                const data = await response.json();
+
+                localStorage.setItem("token", data.token);
+                localStorage.setItem("admin", JSON.stringify(data.admin));
+
+                navigate("/dashboard");
+            } catch (error) {
+                console.error("Login error:", error);
+                if (error instanceof Error) {
+                    setApiError(error.message);
+                } else {
+                    setApiError("An unexpected error occurred");
+                }
+            } finally {
+                setIsLoading(false);
+            }
         },
     });
 
@@ -39,24 +79,29 @@ const Login = () => {
                     <div className="text-center space-y-2">
                         <h1 className="text-2xl font-bold text-gray-900">Admin Portal</h1>
                         <p className="text-sm text-gray-600">Sign in to access the admin dashboard</p>
+                        {apiError && (
+                            <div className="text-red-500 text-sm bg-red-50 p-2 rounded border border-red-200">
+                                {apiError}
+                            </div>
+                        )}
                     </div>
 
                     <form onSubmit={formik.handleSubmit} className="space-y-5">
                         <Input
-                            label="Username"
-                            labelFor="username"
+                            label="NameID"
+                            labelFor="name"
                             icon={<LuUser />}
                             attributes={{
                                 type: "text",
-                                name: "username",
+                                name: "nameId",
                                 placeholder: "Enter admin username",
-                                value: formik.values.username,
+                                value: formik.values.nameId,
                                 onChange: formik.handleChange,
                                 onBlur: formik.handleBlur,
                             }}
                             error={
-                                formik.touched.username && formik.errors.username
-                                    ? formik.errors.username
+                                formik.touched.nameId && formik.errors.nameId
+                                    ? formik.errors.nameId
                                     : undefined
                             }
                         />

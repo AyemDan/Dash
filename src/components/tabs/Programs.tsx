@@ -1,53 +1,56 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useFormik } from "formik";
 import * as Yup from "yup";
 import { LuGraduationCap, LuFileText, LuPlus, LuTrash2 } from "react-icons/lu";
 import Input from "../Input.tsx";
 import Select from "../Select.tsx";
 import ActionButton from "../ActionButton.tsx";
+import { api } from "../../utils/api.ts";
 
 interface Program {
-    id: string;
+    id: any;
     programName: string;
-    semester: string;
+    modules: any[];
     duration: number;
-    participantsEnrolled: number;
+    credits: number;
+    isActive: any;
+    participants : any[];
 }
 
 const Programs = () => {
-    const [programs, setPrograms] = useState<Program[]>([
-        {
-            id: "1",
-            programName: "Computer Science",
-            semester: "Engineering Department",
-            duration: 4,
-            participantsEnrolled: 1,
-        },
-        {
-            id: "2",
-            programName: "Information Technology",
-            semester: "Engineering Department",
-            duration: 4,
-            participantsEnrolled: 1,
-        },
-        {
-            id: "3",
-            programName: "Data Science",
-            semester: "Engineering Department",
-            duration: 4,
-            participantsEnrolled: 1,
-        },
-    ]);
+    const [programs, setPrograms] = useState<Program[]>([]);
+    const [isLoading, setIsLoading] = useState(false);
 
-    const semesters = [
-        "Engineering Department",
-        "Business Department",
-        "Science Department",
-        "Arts Department",
-        "Medical Department",
-    ];
+    useEffect(() => {
+        fetchPrograms();
+    }, []); 
 
-    const durationOptions = [1, 2, 3, 4, 5, 6];
+    const fetchPrograms = async () => {
+        try {
+            const data = await api.get("/programs");
+            if (Array.isArray(data)) {
+                const mappedPrograms = data.map((p: any) => ({
+                    id: p._id,
+                    programName: p.name,
+                    modules: p.modules,
+                    credits: p.credits,
+                    duration: p.duration,
+                    isActive: p.isActive,
+                    participants: p.participants
+                }));
+                setPrograms(mappedPrograms);
+            } else {
+                setPrograms([]);
+            }
+        } catch (error) {
+            console.error("Failed to fetch programs:", error);
+            setPrograms([]);
+        }
+    };
+
+    const semesters = [1, 2];
+
+    const durationOptions = [3, 4, 6, 8, 12];
 
     const validationSchema = Yup.object({
         programName: Yup.string()
@@ -66,23 +69,35 @@ const Programs = () => {
             duration: "",
         },
         validationSchema,
-        onSubmit: (values) => {
-            const newProgram: Program = {
-                id: Date.now().toString(),
-                programName: values.programName,
-                semester: values.semester,
-                duration: parseInt(values.duration),
-                participantsEnrolled: 0,
-            };
-            setPrograms([...programs, newProgram]);
-            formik.resetForm();
-            console.log("Program added:", newProgram);
+        onSubmit: async (values) => {
+            setIsLoading(true);
+            try {
+                const newProgram = await api.post("/programs", {
+                    programName: values.programName,
+                    semester: values.semester,
+                    duration: parseInt(values.duration),
+                    participants: [],
+                });
+                // setPrograms([...programs, newProgram]);
+                formik.resetForm();
+                console.log("Program added:", newProgram);
+            } catch (error) {
+                console.error("Failed to add program:", error);
+            } finally {
+                setIsLoading(false);
+            }
         },
     });
 
-    const handleDelete = (id: string) => {
-        setPrograms(programs.filter((program) => program.id !== id));
-        console.log("Program deleted:", id);
+    const handleDelete = async (id: string) => {
+        if (!window.confirm("Are you sure you want to delete this program?")) return;
+        try {
+            await api.delete(`/programs/${id}`);
+            setPrograms(programs.filter((program) => program.id !== id));
+            console.log("Program deleted:", id);
+        } catch (error) {
+            console.error("Failed to delete program:", error);
+        }
     };
 
     return (
@@ -157,9 +172,9 @@ const Programs = () => {
                             }
                         >
                             <option value="">Select duration</option>
-                            {durationOptions.map((years) => (
-                                <option key={years} value={years}>
-                                    {years} {years === 1 ? "Year" : "Years"}
+                            {durationOptions.map((months) => (
+                                <option key={months} value={months}>
+                                    {months} {months === 1 ? "Month" : "Months"}
                                 </option>
                             ))}
                         </Select>
@@ -175,8 +190,9 @@ const Programs = () => {
                             }
                             attributes={{
                                 type: "submit",
-                                disabled: !formik.isValid,
+                                disabled: !formik.isValid || isLoading,
                             }}
+                            loading={isLoading}
                             width="full"
                             paddingX="px-4"
                             backgroundColor="#6B7280"
@@ -206,15 +222,15 @@ const Programs = () => {
                                     <span className="font-bold text-gray-900">{program.programName}</span>
                                 </div>
                                 <p className="text-sm text-gray-600 mb-1">
-                                    {program.semester} • {program.duration} {program.duration === 1 ? "year" : "years"}
+                                    {program.isActive} • {program.duration}
                                 </p>
                                 <p className="text-sm text-gray-500">
-                                    Participants enrolled: {program.participantsEnrolled}
+                                    Participants enrolled: {program.participants}
                                 </p>
                             </div>
                             <div className="flex items-center gap-3 ml-4">
                                 <span className="px-3 py-1 bg-gray-100 text-gray-700 text-sm font-medium rounded-full">
-                                    {program.duration} {program.duration === 1 ? "year" : "years"}
+                                    {program.duration} {program.duration === 1 ? "month" : "months"}
                                 </span>
                                 <button
                                     onClick={() => handleDelete(program.id)}
