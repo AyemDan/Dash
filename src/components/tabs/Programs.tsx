@@ -9,10 +9,12 @@ import { api } from "../../utils/api.ts";
 
 interface Program {
     id: any;
-    programName: string;
+    title: string;
+    code: string,
     modules: any[];
     duration: number;
     credits: number;
+    semester: number;
     isActive: any;
     participants : any[];
 }
@@ -31,10 +33,12 @@ const Programs = () => {
             if (Array.isArray(data)) {
                 const mappedPrograms = data.map((p: any) => ({
                     id: p._id,
-                    programName: p.name,
+                    title: p.title,
+                    code: p.code,
                     modules: p.modules,
                     credits: p.credits,
                     duration: p.duration,
+                    semester: p.semester,
                     isActive: p.isActive,
                     participants: p.participants
                 }));
@@ -53,7 +57,7 @@ const Programs = () => {
     const durationOptions = [3, 4, 6, 8, 12];
 
     const validationSchema = Yup.object({
-        programName: Yup.string()
+        title: Yup.string()
             .required("Program Name is required")
             .min(3, "Program Name must be at least 3 characters"),
         semester: Yup.string()
@@ -64,7 +68,7 @@ const Programs = () => {
 
     const formik = useFormik({
         initialValues: {
-            programName: "",
+            title: "",
             semester: "",
             duration: "",
         },
@@ -73,7 +77,7 @@ const Programs = () => {
             setIsLoading(true);
             try {
                 const newProgram = await api.post("/programs", {
-                    programName: values.programName,
+                    title: values.title,
                     semester: values.semester,
                     duration: parseInt(values.duration),
                     participants: [],
@@ -82,7 +86,7 @@ const Programs = () => {
                 formik.resetForm();
                 console.log("Program added:", newProgram);
             } catch (error) {
-                console.error("Failed to add program:", error);
+                console.error("Failed to add programs:", error);
             } finally {
                 setIsLoading(false);
             }
@@ -90,13 +94,13 @@ const Programs = () => {
     });
 
     const handleDelete = async (id: string) => {
-        if (!window.confirm("Are you sure you want to delete this program?")) return;
+        if (!window.confirm("Are you sure you want to delete this programs?")) return;
         try {
             await api.delete(`/programs/${id}`);
-            setPrograms(programs.filter((program) => program.id !== id));
+            setPrograms(programs.filter((programs) => programs.id !== id));
             console.log("Program deleted:", id);
         } catch (error) {
-            console.error("Failed to delete program:", error);
+            console.error("Failed to delete programs:", error);
         }
     };
 
@@ -109,25 +113,25 @@ const Programs = () => {
                     <h2 className="text-xl font-bold text-gray-900">Create New Program</h2>
                 </div>
                 <p className="text-sm text-gray-600 mb-6">
-                    Add a new academic program that participants can enroll in
+                    Add a new academic programs that participants can enroll in
                 </p>
 
                 <form onSubmit={formik.handleSubmit} className="space-y-4">
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <Input
                             label="Program Name *"
-                            labelFor="programName"
+                            labelFor="title"
                             attributes={{
                                 type: "text",
-                                name: "programName",
+                                title: "title",
                                 placeholder: "Computer Science",
-                                value: formik.values.programName,
+                                value: formik.values.title,
                                 onChange: formik.handleChange,
                                 onBlur: formik.handleBlur,
                             }}
                             error={
-                                formik.touched.programName && formik.errors.programName
-                                    ? formik.errors.programName
+                                formik.touched.title && formik.errors.title
+                                    ? formik.errors.title
                                     : undefined
                             }
                             note="(e.g., Computer Science)"
@@ -137,7 +141,7 @@ const Programs = () => {
                             label="Semester*"
                             labelFor="semester"
                             attributes={{
-                                name: "semester",
+                                title: "semester",
                                 value: formik.values.semester,
                                 onChange: formik.handleChange,
                                 onBlur: formik.handleBlur,
@@ -160,7 +164,7 @@ const Programs = () => {
                             label="Duration (Years) *"
                             labelFor="duration"
                             attributes={{
-                                name: "duration",
+                                title: "duration",
                                 value: formik.values.duration,
                                 onChange: formik.handleChange,
                                 onBlur: formik.handleBlur,
@@ -207,35 +211,35 @@ const Programs = () => {
                 <div className="flex items-center gap-3 mb-4">
                     <LuFileText className="h-6 w-6 text-amber-900" />
                     <h2 className="text-xl font-bold text-gray-900">
-                        Current Programs ({programs.length} {programs.length === 1 ? "program" : "programs"})
+                        Current Programs ({programs.length} {programs.length === 1 ? "programs" : "programs"})
                     </h2>
                 </div>
 
                 <div className="space-y-2 max-h-[500px] overflow-y-auto">
-                    {programs.map((program) => (
+                    {programs.map((programs) => (
                         <div
-                            key={program.id}
+                            key={programs.id}
                             className="flex items-center justify-between p-4 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
                         >
                             <div className="flex-1">
                                 <div className="flex items-center gap-2 mb-1">
-                                    <span className="font-bold text-gray-900">{program.programName}</span>
+                                    <span className="font-bold text-gray-900">{programs.code}</span>
                                 </div>
                                 <p className="text-sm text-gray-600 mb-1">
-                                    {program.isActive} • {program.duration}
+                                    {programs.title} • {programs.duration}
                                 </p>
                                 <p className="text-sm text-gray-500">
-                                    Participants enrolled: {program.participants}
+                                    Participants enrolled: {programs.participants}
                                 </p>
                             </div>
                             <div className="flex items-center gap-3 ml-4">
                                 <span className="px-3 py-1 bg-gray-100 text-gray-700 text-sm font-medium rounded-full">
-                                    {program.duration} {program.duration === 1 ? "month" : "months"}
+                                    {programs.duration} {programs.duration === 1 ? "month" : "months"}
                                 </span>
                                 <button
-                                    onClick={() => handleDelete(program.id)}
+                                    onClick={() => handleDelete(programs.id)}
                                     className="p-2 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-colors"
-                                    aria-label="Delete program"
+                                    aria-label="Delete programs"
                                 >
                                     <LuTrash2 className="h-4 w-4" />
                                 </button>

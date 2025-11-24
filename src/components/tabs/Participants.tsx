@@ -12,15 +12,23 @@ interface Participant {
     participantId: string;
     fullName: string;
     email: string;
+    phoneNumber: string;
+    division: string;
+    deanery: string;
+    parish: string;
     password: string;
     program: string;
     graduationYear: number;
     modulesCount: number;
 }
 
+interface Program {
+    id: string;
+    title: string;
+}
 const Participants = () => {
     const [participants, setParticipants] = useState<Participant[]>([]);
-    const [programs, setPrograms] = useState<string[]>([]);
+    const [programs, setPrograms] = useState<Program[]>([]);
     const [isLoading, setIsLoading] = useState(false);
 
     useEffect(() => {
@@ -38,7 +46,7 @@ const Participants = () => {
             setParticipants(Array.isArray(participantsData) ? participantsData : []);
 
             if (Array.isArray(programsData)) {
-                setPrograms(programsData.map((p: any) => p.programName));
+                setPrograms(programsData.map((p: any) => ({ id: p.id, title: p.title })))
             } else {
                 setPrograms([]);
             }
@@ -49,55 +57,53 @@ const Participants = () => {
         }
     };
 
-    const graduationYears = Array.from({ length: 10 }, (_, i) => new Date().getFullYear() + i);
-    const semesters = ["1Qtr", "2Qtr", "3Qtr", "4Qtr"];
+    const semesters = ["1st", "2nd"];
 
     const validationSchema = Yup.object({
-        participantId: Yup.string()
-            .required("Participant ID is required")
-            .matches(/^[A-Z]{2}\d{3}$/, "Participant ID must be in format like PT005"),
         fullName: Yup.string()
             .required("Full Name is required")
             .min(3, "Full Name must be at least 3 characters"),
         email: Yup.string()
             .email("Please enter a valid email address"),
         password: Yup.string(),
+        phoneNumber: Yup.number()
+            .required("Phone Number is required"),
         program: Yup.string()
             .required("Program is required"),
-        graduationYear: Yup.string()
-            .required("Graduation Year is required"),
         currentSemester: Yup.string(),
     });
 
     const formik = useFormik({
         initialValues: {
-            participantId: "",
             fullName: "",
             email: "",
             password: "",
+            phoneNumber: "",
+            division: "",
+            deanery: "",
+            parish: "",
             program: "",
-            graduationYear: "",
             currentSemester: "1Qtr",
         },
         validationSchema,
         onSubmit: async (values) => {
             setIsLoading(true);
-            // Auto-generate password if empty
             let generatedPassword = values.password;
             if (!generatedPassword) {
                 const firstName = values.fullName.split(" ")[0].toLowerCase();
-                const lastThreeDigits = values.participantId.slice(-3);
+                const lastThreeDigits = values.phoneNumber.toString().slice(-3);
                 generatedPassword = firstName + lastThreeDigits;
             }
 
             try {
                 const newParticipant = await api.post("/participants", {
-                    participantId: values.participantId,
                     fullName: values.fullName,
                     email: values.email,
                     password: generatedPassword,
+                    division: values.division,
+                    deanery: values.deanery,
+                    parish: values.parish,
                     program: values.program,
-                    graduationYear: parseInt(values.graduationYear),
                     modulesCount: 0,
                 });
                 setParticipants([...participants, newParticipant]);
@@ -175,24 +181,6 @@ const Participants = () => {
                 <form onSubmit={formik.handleSubmit} className="space-y-4">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <Input
-                            label="Participant ID *"
-                            labelFor="participantId"
-                            attributes={{
-                                type: "text",
-                                name: "participantId",
-                                placeholder: "PT005",
-                                value: formik.values.participantId,
-                                onChange: formik.handleChange,
-                                onBlur: formik.handleBlur,
-                            }}
-                            error={
-                                formik.touched.participantId && formik.errors.participantId
-                                    ? formik.errors.participantId
-                                    : undefined
-                            }
-                        />
-
-                        <Input
                             label="Full Name *"
                             labelFor="fullName"
                             attributes={{
@@ -231,7 +219,6 @@ const Participants = () => {
                         <Input
                             label="Password (optional)"
                             labelFor="password"
-                            passwordInput
                             attributes={{
                                 name: "password",
                                 placeholder: "Auto-generated if empty",
@@ -239,7 +226,57 @@ const Participants = () => {
                                 onChange: formik.handleChange,
                                 onBlur: formik.handleBlur,
                             }}
-                            note="Leave empty to auto-generate: firstname + last 3 digits of ID"
+                        />
+
+                        <Input
+                            label="Division"
+                            labelFor="division"
+                            attributes={{
+                                name: "division",
+                                placeholder: "",
+                                value: formik.values.division,
+                                onChange: formik.handleChange,
+                                onBlur: formik.handleBlur,
+                            }}
+                        />
+                        <Input
+                            label="Deanery"
+                            labelFor="deanery"
+                            attributes={{
+                                name: "deanery",
+                                placeholder: "",
+                                value: formik.values.deanery,
+                                onChange: formik.handleChange,
+                                onBlur: formik.handleBlur,
+                            }}
+                        />
+                        <Input
+                            label="Parish "
+                            labelFor="parish"
+                            attributes={{
+                                name: "parish",
+                                placeholder: "",
+                                value: formik.values.parish,
+                                onChange: formik.handleChange,
+                                onBlur: formik.handleBlur,
+                            }}
+                        />
+                        <Input
+                            label="Phone Number"
+                            labelFor="phoneNumber"
+                            attributes={{
+                                type: "tel",
+                                name: "phoneNumber",
+                                placeholder: "123-456-7890",
+                                value: formik.values.phoneNumber,
+                                onChange: formik.handleChange,
+                                onBlur: formik.handleBlur,
+                            }}
+                            error={
+                                formik.touched.phoneNumber && formik.errors.phoneNumber
+                                    ? formik.errors.phoneNumber
+                                    : undefined
+                            }
                         />
 
                         <Select
@@ -257,33 +294,10 @@ const Participants = () => {
                                     : undefined
                             }
                         >
-                            <option value="">Select program</option>
-                            {programs.map((program) => (
-                                <option key={program} value={program}>
-                                    {program}
-                                </option>
-                            ))}
-                        </Select>
-
-                        <Select
-                            label="Graduation Year *"
-                            labelFor="graduationYear"
-                            attributes={{
-                                name: "graduationYear",
-                                value: formik.values.graduationYear,
-                                onChange: formik.handleChange,
-                                onBlur: formik.handleBlur,
-                            }}
-                            error={
-                                formik.touched.graduationYear && formik.errors.graduationYear
-                                    ? formik.errors.graduationYear
-                                    : undefined
-                            }
-                        >
-                            <option value="">Select graduation year</option>
-                            {graduationYears.map((year) => (
-                                <option key={year} value={year}>
-                                    {year}
+                            <option value="">Select a program</option>
+                            {programs.map((programs) => (
+                                <option key={programs.id} value={programs.id}>
+                                    {programs.title}
                                 </option>
                             ))}
                         </Select>
@@ -315,8 +329,9 @@ const Participants = () => {
                                 </span>
                             }
                             attributes={{
-                                type: "submit",
-                                disabled: !formik.isValid || isLoading,
+                                type: "button",
+                                onClick: () => formik.handleSubmit(),
+                                disabled: isLoading,
                             }}
                             loading={isLoading}
                             width="full"
