@@ -1,6 +1,7 @@
 import { useState, useRef } from "react";
 import { LuDownload } from "react-icons/lu";
 import ActionButton from "../ActionButton.tsx";
+import { api } from "../../utils/api.ts";
 
 interface FileInputProps {
     label: string;
@@ -118,7 +119,6 @@ const ExportCard = ({ title, description, exportFileName, onExport }: ExportCard
 
 const ImportExport = () => {
     const [participantFile, setParticipantFile] = useState<File | null>(null);
-    const [moduleFile, setEnrollmentFile] = useState<File | null>(null);
 
     const handleDownloadParticipantTemplate = () => {
         console.log("Download participant template");
@@ -130,25 +130,74 @@ const ImportExport = () => {
         // Add import logic here
     };
 
-    const handleExportParticipants = () => {
+
+
+    const handleExportParticipants = async () => {
         console.log("Export participants");
-        // Add export logic here
+        try {
+            const data = await api.get("/participants");
+            const participantsArray = Array.isArray(data) ? data : (Array.isArray(data.results) ? data.results : []);
+
+            if (participantsArray.length === 0) {
+                alert("No participants to export.");
+                return;
+            }
+
+            // Define headers
+            const headers = [
+                "ID",
+                "First Name",
+                "Last Name",
+                "Email",
+                "Phone Number",
+                "Division",
+                "Deanery",
+                "Parish",
+                "Program",
+                "Modules Count"
+            ];
+
+            // Map data to CSV rows
+            const rows = participantsArray.map((p: any) => {
+                const firstName = p.firstName || p.fullName?.split(' ')[0] || "";
+                const lastName = p.lastName || p.fullName?.split(' ').slice(1).join(' ') || "";
+
+                return [
+                    p._id || p.id || "",
+                    firstName,
+                    lastName,
+                    p.email || "",
+                    p.phoneNumber || "",
+                    p.division || "",
+                    p.deanery || "",
+                    p.parish || "",
+                    typeof p.program === 'object' ? p.program?.title : (p.program || ""),
+                    p.modules?.length || 0
+                ];
+            });
+
+            // Convert to CSV string
+            const csvContent = [
+                headers.join(","),
+                ...rows.map((row: any[]) => row.map(field => `"${String(field).replace(/"/g, '""')}"`).join(","))
+            ].join("\n");
+
+            // Create and trigger download
+            const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+            const link = document.createElement("a");
+            const url = URL.createObjectURL(blob);
+            link.setAttribute("href", url);
+            link.setAttribute("download", "participants_export.csv");
+            link.style.visibility = "hidden";
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        } catch (error) {
+            console.error("Failed to export participants:", error);
+            alert("Failed to export participants. Please try again.");
+        }
     };
 
-    const handleDownloadEnrollmentTemplate = () => {
-        console.log("Download module template");
-        // Add download logic here
-    };
-
-    const handleImportEnrollments = () => {
-        console.log("Import modules", moduleFile);
-        // Add import logic here
-    };
-
-    const handleExportEnrollments = () => {
-        console.log("Export modules");
-        // Add export logic here
-    };
 
     return (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -168,21 +217,6 @@ const ImportExport = () => {
                 onExport={handleExportParticipants}
             />
 
-            <ImportCard
-                title="Import Enrollments"
-                description="Upload a CSV file with module data"
-                onDownloadTemplate={handleDownloadEnrollmentTemplate}
-                onImport={handleImportEnrollments}
-                fileName={moduleFile?.name || ""}
-                onFileChange={setEnrollmentFile}
-            />
-
-            <ExportCard
-                title="Export Enrollments"
-                description="Download all module data as CSV"
-                exportFileName="courses-export.csv"
-                onExport={handleExportEnrollments}
-            />
         </div>
     );
 };
