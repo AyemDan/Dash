@@ -5,8 +5,9 @@ import * as Yup from "yup";
 import Input from "../components/Input.tsx";
 import ActionButton from "../components/ActionButton.tsx";
 import { LuUser, LuLock, LuShield } from "react-icons/lu";
+import { AUTH_TOKEN_KEY, AUTH_ADMIN_KEY, API_BASE_URL } from "../utils/constants";
 
-const API_URL = "http://localhost:4000/api/auth/login"; // TODO: Update with actual API URL
+const API_URL = `${API_BASE_URL}/auth/login`;
 
 const Login = () => {
     const navigate = useNavigate();
@@ -49,8 +50,8 @@ const Login = () => {
 
                 const data = await response.json();
 
-                localStorage.setItem("token", data.token);
-                localStorage.setItem("admin", JSON.stringify(data.admin));
+                localStorage.setItem(AUTH_TOKEN_KEY, data.token);
+                localStorage.setItem(AUTH_ADMIN_KEY, JSON.stringify(data.admin));
 
                 navigate("/dashboard");
             } catch (error) {

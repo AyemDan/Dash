@@ -1,4 +1,5 @@
 import { createSlice, type PayloadAction } from "@reduxjs/toolkit";
+import { ACTIVE_TAB_KEY } from "../../utils/constants";
 
 type TabType = "import-export" | "modules" | "programs" | "participants" | "enrollments" | "grades";
 
@@ -7,13 +8,13 @@ interface AppState {
 }
 
 const getInitialState = (): AppState => {
-    const savedTab = localStorage.getItem("activeTab");
+    const savedTab = localStorage.getItem(ACTIVE_TAB_KEY);
     const validTabs: TabType[] = ["import-export", "modules", "programs", "participants", "enrollments", "grades"];
-    
+
     if (savedTab && validTabs.includes(savedTab as TabType)) {
         return { activeTab: savedTab as TabType };
     }
-    
+
     return { activeTab: "import-export" };
 };
 
@@ -25,7 +26,7 @@ const appSlice = createSlice({
     reducers: {
         setActiveTab: (state, action: PayloadAction<TabType>) => {
             state.activeTab = action.payload;
-            localStorage.setItem("activeTab", action.payload);
+            localStorage.setItem(ACTIVE_TAB_KEY, action.payload);
         },
     },
 });

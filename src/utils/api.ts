@@ -1,7 +1,9 @@
-const API_BASE_URL = "http://localhost:4000/api";
+import { AUTH_TOKEN_KEY, AUTH_ADMIN_KEY, API_BASE_URL as BASE_URL } from "./constants";
+
+const API_BASE_URL = BASE_URL;
 
 const getHeaders = () => {
-    const token = localStorage.getItem("token");
+    const token = localStorage.getItem(AUTH_TOKEN_KEY);
     return {
         "Content-Type": "application/json",
         Authorization: token ? `Bearer ${token}` : "",
@@ -12,8 +14,8 @@ const handleResponse = async (response: Response) => {
     if (!response.ok) {
         if (response.status === 401 || response.status === 403) {
             // Token is invalid or expired
-            localStorage.removeItem("token");
-            localStorage.removeItem("admin");
+            localStorage.removeItem(AUTH_TOKEN_KEY);
+            localStorage.removeItem(AUTH_ADMIN_KEY);
             window.location.href = "/login";
             throw new Error("Session expired. Please login again.");
         }
