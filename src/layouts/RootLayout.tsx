@@ -14,30 +14,8 @@ const ScrollToTop = () => {
 };
 
 const RootLayout = () => {
-    // const { isAuthenticated, tokenExpiryTime } = useAppSelector((state) => state.auth);
-    // const { handleLogout } = useLogout();
 
-    // useEffect(() => {
-    //     if (!tokenExpiryTime) return;
-
-    //     const expiryDate = new Date(tokenExpiryTime).getTime();
-    //     const now = Date.now();
-    //     const delay = expiryDate - now;
-
-    //     if (delay <= 0) {
-    //         handleLogout();
-    //     } else {
-    //         const timeout = setTimeout(() => {
-    //             handleLogout();
-    //         }, delay);
-
-    //         return () => clearTimeout(timeout);
-    //     }
-    // }, [tokenExpiryTime, handleLogout]);
-
-    // if (!isAuthenticated) {
-    //     return <Navigate to="/login" replace />;
-    // }
+    // Auth logic removed as it's commented out and likely handled elsewhere or pending implementation
 
     return (
         <div className="w-full flex flex-col bg-[#F7F9FC] h-screen overflow-hidden">

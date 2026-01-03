@@ -32,11 +32,21 @@ export const api = {
         });
         return handleResponse(response);
     },
-    post: async (endpoint: string, data: any) => {
+    post: async (endpoint: string, data: any, customHeaders: any = {}) => {
+        const headers: any = { ...getHeaders(), ...customHeaders };
+
+        let body;
+        if (data instanceof FormData) {
+            delete headers["Content-Type"]; // Let browser set multipart/form-data with boundary
+            body = data;
+        } else {
+            body = JSON.stringify(data);
+        }
+
         const response = await fetch(`${API_BASE_URL}${endpoint}`, {
             method: "POST",
-            headers: getHeaders(),
-            body: JSON.stringify(data),
+            headers,
+            body,
         });
         return handleResponse(response);
     },

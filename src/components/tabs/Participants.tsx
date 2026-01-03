@@ -1,73 +1,25 @@
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
 import { useFormik } from "formik";
 import * as Yup from "yup";
 import { LuUsers, LuPlus, LuUserX } from "react-icons/lu";
 import Input from "../Input.tsx";
 import Select from "../Select.tsx";
 import ActionButton from "../ActionButton.tsx";
-import { api } from "../../utils/api.ts";
+import { useParticipants } from "../../hooks/useParticipants.ts";
 
-interface Participant {
-    id: string;
-    participantId: string;
-    firstName: string;
-    lastName: string;
-    email: string;
-    phoneNumber: string;
-    division: string;
-    deanery: string;
-    parish: string;
-    password: string;
-    program: string;
-    graduationYear: number;
-    modulesCount: number;
-}
-
-interface Program {
-    id: string;
-    title: string;
-}
 const Participants = () => {
-    const [participants, setParticipants] = useState<Participant[]>([]);
-    const [programs, setPrograms] = useState<Program[]>([]);
-    const [isLoading, setIsLoading] = useState(false);
+    const {
+        participants,
+        programs,
+        isLoading,
+        fetchParticipantsAndPrograms,
+        addParticipant,
+        deleteParticipant
+    } = useParticipants();
 
     useEffect(() => {
-        fetchData();
-    }, []);
-
-    const fetchData = async () => {
-        try {
-            const [participantsData, programsData] = await Promise.all([
-                api.get("/participants"),
-                api.get("/programs")
-            ]);
-
-            // Ensure data is an array before setting state
-            const participantsArray = Array.isArray(participantsData) ? participantsData : (Array.isArray(participantsData.results) ? participantsData.results : []);
-
-            if (participantsArray.length > 0) {
-                setParticipants(participantsArray.map((p: any) => ({
-                    ...p,
-                    id: p._id || p.id,
-                    firstName: p.firstName || p.fullName?.split(' ')[0] || "",
-                    lastName: p.lastName || p.fullName?.split(' ').slice(1).join(' ') || "",
-                })));
-            } else {
-                setParticipants([]);
-            }
-
-            if (Array.isArray(programsData)) {
-                setPrograms(programsData.map((p: any) => ({ id: p._id || p.id, title: p.title })))
-            } else {
-                setPrograms([]);
-            }
-        } catch (error) {
-            console.error("Failed to fetch data:", error);
-            setParticipants([]); // Fallback to empty array on error
-            setPrograms([]);
-        }
-    };
+        fetchParticipantsAndPrograms();
+    }, [fetchParticipantsAndPrograms]);
 
     const semesters = ["1st", "2nd"];
 
@@ -103,7 +55,6 @@ const Participants = () => {
         },
         validationSchema,
         onSubmit: async (values) => {
-            setIsLoading(true);
             let generatedPassword = values.password;
             if (!generatedPassword) {
                 const firstName = values.firstName.toLowerCase();
@@ -112,10 +63,10 @@ const Participants = () => {
             }
 
             try {
-                const newParticipant = await api.post("/participants", {
+                await addParticipant({
                     firstName: values.firstName,
                     lastName: values.lastName,
-                    fullName: `${values.firstName} ${values.lastName}`, // Send fullName for backward compatibility if needed
+                    fullName: `${values.firstName} ${values.lastName}`,
                     email: values.email,
                     password: generatedPassword,
                     division: values.division,
@@ -124,30 +75,17 @@ const Participants = () => {
                     program: values.program,
                     modulesCount: 0,
                 });
-                setParticipants([...participants, {
-                    ...newParticipant,
-                    firstName: values.firstName,
-                    lastName: values.lastName
-                }]);
                 formik.resetForm();
-                console.log("Participant added:", newParticipant);
+                // Toaster success?
             } catch (error) {
-                console.error("Failed to add participant:", error);
-            } finally {
-                setIsLoading(false);
+                // Toaster error?
             }
         },
     });
 
     const handleDelete = async (id: string) => {
         if (!window.confirm("Are you sure you want to delete this participant?")) return;
-        try {
-            await api.delete(`/participants/${id}`);
-            setParticipants(participants.filter((participant) => participant.id !== id));
-            console.log("Participant deleted:", id);
-        } catch (error) {
-            console.error("Failed to delete participant:", error);
-        }
+        await deleteParticipant(id);
     };
 
     return (
