@@ -1,10 +1,15 @@
-import { useState, useEffect } from "react";
 import { useFormik } from "formik";
 import * as Yup from "yup";
 import { LuPlus, LuTrash2 } from "react-icons/lu";
 import Select from "../Select.tsx";
 import ActionButton from "../ActionButton.tsx";
-import { api } from "../../utils/api.ts";
+import {
+    useGetParticipantsQuery,
+    useGetModulesQuery,
+    useGetProgramsQuery,
+    useEnrollParticipantMutation,
+    useUpdateParticipantMutation
+} from "../../store/api/apiSlice.ts";
 
 interface Enrollment {
     id: string;
@@ -17,83 +22,38 @@ interface Enrollment {
     status: "Registered" | "In Progress" | "Completed" | "Dropped";
 }
 
-interface Participant {
-    id: string;
-    firstName: string;
-    lastName: string;
-    modules: any[];
-    enrolledPrograms: string[];
-}
-
-interface Module {
-    id: string;
-    title: string;
-    code: string;
-    credits: number;
-    programId: any;
-}
-
-interface Program {
-    id: string;
-    title: string;
-}
-
 const Enrollments = () => {
-    const [participants, setParticipants] = useState<Participant[]>([]);
-    const [modules, setModules] = useState<Module[]>([]);
-    const [programs, setPrograms] = useState<Program[]>([]);
-    const [isLoading, setIsLoading] = useState(false);
+    const { data: participantsData = [], isLoading: isParticipantsLoading } = useGetParticipantsQuery({});
+    const { data: modulesData = [], isLoading: isModulesLoading } = useGetModulesQuery({});
+    const { data: programsData = [], isLoading: isProgramsLoading } = useGetProgramsQuery({});
 
-    useEffect(() => {
-        fetchData();
-    }, []);
+    const [enrollParticipant, { isLoading: isEnrolling }] = useEnrollParticipantMutation();
+    const [updateParticipant, { isLoading: isUpdating }] = useUpdateParticipantMutation();
 
-    const fetchData = async () => {
-        try {
-            const [participantsData, modulesData, programsData] = await Promise.all([
-                api.get("/participants"),
-                api.get("/modules"),
-                api.get("/programs")
-            ]);
+    const isLoading = isParticipantsLoading || isModulesLoading || isProgramsLoading || isEnrolling || isUpdating;
 
-            const participantsArray = Array.isArray(participantsData) ? participantsData : (Array.isArray(participantsData.results) ? participantsData.results : []);
+    // Transform Data
+    const participants = Array.isArray(participantsData) ? participantsData.map((p: any) => ({
+        id: p._id || p.id,
+        firstName: p.firstName || p.fullName?.split(' ')[0] || p.name?.split(' ')[0] || "",
+        lastName: p.lastName || p.fullName?.split(' ').slice(1).join(' ') || p.name?.split(' ').slice(1).join(' ') || "",
+        modules: p.modules || [],
+        enrolledPrograms: p.enrolledPrograms || []
+    })) : [];
 
-            if (participantsArray.length > 0) {
-                setParticipants(participantsArray.map((p: any) => ({
-                    id: p._id,
-                    firstName: p.firstName || p.fullName?.split(' ')[0] || p.name?.split(' ')[0] || "",
-                    lastName: p.lastName || p.fullName?.split(' ').slice(1).join(' ') || p.name?.split(' ').slice(1).join(' ') || "",
-                    modules: p.modules || [],
-                    enrolledPrograms: p.enrolledPrograms || []
-                })));
-            } else {
-                setParticipants([]);
-            }
+    const modules = Array.isArray(modulesData) ? modulesData.map((m: any) => ({
+        id: m.id || m._id,
+        code: m.code,
+        title: m.title,
+        credits: m.credits,
+        programId: typeof m.program === 'object' ? m.program._id : m.program
+    })) : [];
 
-            if (Array.isArray(modulesData)) {
-                setModules(modulesData.map((m: any) => ({
-                    id: m.id || m._id,
-                    code: m.code,
-                    title: m.title,
-                    credits: m.credits,
-                    programId: typeof m.program === 'object' ? m.program._id : m.program
-                })));
-            } else {
-                setModules([]);
-            }
+    const programs = Array.isArray(programsData) ? programsData.map((p: any) => ({
+        id: p.id || p._id,
+        title: p.title
+    })) : [];
 
-            if (Array.isArray(programsData)) {
-                setPrograms(programsData.map((p: any) => ({
-                    id: p.id || p._id,
-                    title: p.title
-                })));
-            } else {
-                setPrograms([]);
-            }
-        } catch (error) {
-            console.error("Failed to fetch data:", error);
-        }
-    };
 
     const statusOptions = ["Registered", "In Progress", "Completed", "Dropped"];
     const semesters = ["1st", "2nd"];
@@ -119,9 +79,8 @@ const Enrollments = () => {
         },
         validationSchema,
         onSubmit: async (values) => {
-            setIsLoading(true);
-            const selectedParticipant = participants.find((p) => p.id === values.participant);
-            const selectedModule = modules.find((m) => m.id === values.module);
+            const selectedParticipant = participants.find((p: any) => p.id === values.participant);
+            const selectedModule = modules.find((m: any) => m.id === values.module);
 
             if (selectedParticipant && selectedModule) {
                 try {
@@ -132,15 +91,13 @@ const Enrollments = () => {
 
                     if (isAlreadyEnrolled) {
                         alert("Participant is already enrolled in this module.");
-                        setIsLoading(false);
                         return;
                     }
 
-                    await api.post(`/participants/${selectedParticipant.id}/enroll`, {
-                        moduleIds: [values.module]
-                    });
-
-                    await fetchData();
+                    await enrollParticipant({
+                        id: selectedParticipant.id,
+                        data: { moduleIds: [values.module] }
+                    }).unwrap();
 
                     console.log("Enrollment updated for participant:", selectedParticipant.firstName);
 
@@ -155,20 +112,16 @@ const Enrollments = () => {
                     });
                 } catch (error) {
                     console.error("Failed to enroll participant:", error);
-                } finally {
-                    setIsLoading(false);
                 }
-            } else {
-                setIsLoading(false);
             }
         },
     });
 
-    const selectedParticipant = participants.find((p) => p.id === formik.values.participant);
+    const selectedParticipant = participants.find((p: any) => p.id === formik.values.participant);
 
     const filteredEnrollments: Enrollment[] = selectedParticipant?.modules.map((m: any) => {
         const moduleId = typeof m.module === 'object' ? m.module._id : m.module;
-        const moduleDetails = modules.find(mod => mod.id === moduleId);
+        const moduleDetails = modules.find((mod: any) => mod.id === moduleId);
         return {
             id: moduleId,
             participantId: selectedParticipant.id,
@@ -196,15 +149,10 @@ const Enrollments = () => {
                 module: typeof m.module === 'object' ? m.module._id : m.module
             }));
 
-            await api.put(`/participants/${selectedParticipant.id}`, {
+            await updateParticipant({
+                id: selectedParticipant.id,
                 modules: payloadModules
-            });
-
-            const updatedParticipant = {
-                ...selectedParticipant,
-                modules: updatedModules
-            };
-            setParticipants(participants.map(p => p.id === selectedParticipant.id ? updatedParticipant : p));
+            }).unwrap();
 
             console.log("Enrollment deleted for module:", moduleId);
         } catch (error) {
@@ -230,12 +178,12 @@ const Enrollments = () => {
     return (
         <div className="space-y-6">
             {/* Enroll Participant in Module Section */}
-            <div className="bg-white rounded-xl border border-gray-200 p-6">
+            <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 transition-colors">
                 <div className="mb-6">
-                    <h2 className="text-xl font-bold text-gray-900 mb-2">
+                    <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
                         Enroll Participant in Module
                     </h2>
-                    <p className="text-sm text-gray-600">
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
                         Assign modules from the catalog to participants
                     </p>
                 </div>
@@ -258,7 +206,7 @@ const Enrollments = () => {
                             }
                         >
                             <option value="">Choose a participant</option>
-                            {participants.map((participants) => (
+                            {participants.map((participants: any) => (
                                 <option key={participants.id} value={participants.id}>
                                     {participants.firstName} {participants.lastName}
                                 </option>
@@ -284,7 +232,7 @@ const Enrollments = () => {
                             }
                         >
                             <option value="">Select program</option>
-                            {programs.map((programs) => (
+                            {programs.map((programs: any) => (
                                 <option key={programs.id} value={programs.id}>
                                     {programs.title}
                                 </option>
@@ -300,7 +248,7 @@ const Enrollments = () => {
                                 onChange: (e) => {
                                     formik.handleChange(e);
                                     const selectedModuleId = e.target.value;
-                                    const selectedModule = modules.find(m => m.id === selectedModuleId);
+                                    const selectedModule = modules.find((m: any) => m.id === selectedModuleId);
                                     if (selectedModule && selectedModule.programId) {
                                         formik.setFieldValue("program", selectedModule.programId);
                                     }
@@ -315,8 +263,8 @@ const Enrollments = () => {
                         >
                             <option value="">Select module</option>
                             {modules
-                                .filter(m => !formik.values.program || m.programId === formik.values.program)
-                                .map((modules) => (
+                                .filter((m: any) => !formik.values.program || m.programId === formik.values.program)
+                                .map((modules: any) => (
                                     <option key={modules.id} value={modules.id}>
                                         {modules.code} - {modules.title}
                                     </option>
@@ -382,9 +330,9 @@ const Enrollments = () => {
 
             {/* Current Enrollments Section */}
             {formik.values.participant && (
-                <div className="bg-white rounded-xl border border-gray-200 p-6">
+                <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 transition-colors">
                     <div className="mb-4">
-                        <h2 className="text-xl font-bold text-gray-900">
+                        <h2 className="text-xl font-bold text-gray-900 dark:text-white">
                             Current Enrollments for {selectedParticipant?.firstName} {selectedParticipant?.lastName} ({filteredEnrollments.length})
                         </h2>
                     </div>
@@ -392,23 +340,23 @@ const Enrollments = () => {
                     {/* Enrollments List */}
                     <div className="space-y-3">
                         {filteredEnrollments.length === 0 ? (
-                            <p className="text-gray-500 text-center py-8">No enrollments found for this participant.</p>
+                            <p className="text-gray-500 dark:text-gray-400 text-center py-8">No enrollments found for this participant.</p>
                         ) : (
                             filteredEnrollments.map((enrollment: Enrollment) => (
                                 <div
                                     key={enrollment.id}
-                                    className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+                                    className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors border border-transparent dark:border-gray-600"
                                 >
                                     <div className="flex-1">
                                         <div className="flex items-center gap-2 mb-1">
-                                            <span className="font-semibold text-gray-900">
+                                            <span className="font-semibold text-gray-900 dark:text-white">
                                                 {enrollment.moduleCode} {enrollment.moduleName}
                                             </span>
                                         </div>
-                                        <p className="text-sm text-gray-600 mb-1">
+                                        <p className="text-sm text-gray-600 dark:text-gray-300 mb-1">
                                             {enrollment.credits} {enrollment.credits === 1 ? "credit" : "credits"}
                                         </p>
-                                        <p className="text-sm text-gray-600">
+                                        <p className="text-sm text-gray-600 dark:text-gray-300">
                                             Progress: {enrollment.progress}% • Grade: {enrollment.grade || "-"}
                                         </p>
                                     </div>
@@ -419,7 +367,7 @@ const Enrollments = () => {
                                             {enrollment.status}
                                         </span>
                                         {enrollment.grade && (
-                                            <span className="px-3 py-1 bg-gray-200 text-gray-700 text-sm font-medium rounded-full">
+                                            <span className="px-3 py-1 bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-200 text-sm font-medium rounded-full">
                                                 {enrollment.grade}
                                             </span>
                                         )}

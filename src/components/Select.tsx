@@ -23,7 +23,7 @@ const Select = ({
         <div>
             {label && (
                 <label
-                    className="text-[#414651] text-sm font-medium"
+                    className="text-[#414651] dark:text-gray-300 text-sm font-medium"
                     htmlFor={labelFor}
                 >
                     {label}
@@ -32,13 +32,13 @@ const Select = ({
 
             <div className="relative mt-1">
                 {icon && (
-                    <span className="text-[#A4A7AE] text-lg absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none">
+                    <span className="text-[#A4A7AE] dark:text-gray-400 text-lg absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none">
                         {icon}
                     </span>
                 )}
 
                 <select
-                    className={`w-full px-3 py-2.5 border text-[15px] border-[#D5D7DA] rounded-lg outline-none transition-all duration-300 appearance-none bg-white
+                    className={`w-full px-3 py-2.5 border text-[15px] border-[#D5D7DA] dark:border-gray-600 rounded-lg outline-none transition-all duration-300 appearance-none bg-white dark:bg-gray-700 text-gray-900 dark:text-white
                         ${icon ? "pl-9" : ""}
                         ${error ? "border-[#D95959]" : ""}
                     `}

@@ -84,23 +84,23 @@ const Dashboard = () => {
             case "grades":
                 return <Grades />;
             default:
-                return <ImportExport />;
+                return <Enrollments />;
         }
     };
 
     return (
         <div className="space-y-6">
-            <div className="bg-white rounded-xl border border-gray-200 p-6">
-                <h1 className="text-2xl font-bold text-gray-900 mb-2">
+            <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 transition-colors">
+                <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
                     Participant Data Management
                 </h1>
-                <p className="text-sm text-gray-600">
+                <p className="text-sm text-gray-600 dark:text-gray-400">
                     Add participants, create modules, and manage enrollments
                 </p>
             </div>
 
-            <div className="bg-gray-100 rounded-xl p-2">
-                <div className="max-lg:flex max-lg:items-center max-lg:gap-2 max-lg:overflow-x-auto grid grid-cols-6 gap-3">
+            <div className="bg-gray-100 dark:bg-gray-800 rounded-xl p-2 transition-colors">
+                <div className="max-lg:flex max-lg:items-center max-lg:gap-2 max-lg:overflow-x-auto no-scrollbar grid grid-cols-6 gap-3">
                     {tabs.map((tab) => {
                         const isActive = activeTab === tab.id;
                         const Icon = tab.icon;
@@ -113,13 +113,13 @@ const Dashboard = () => {
                                     flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg font-medium text-[13px]
                                     transition-all duration-200 whitespace-nowrap cursor-pointer
                                     ${isActive
-                                        ? "bg-white"
-                                        : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+                                        ? "bg-white dark:bg-gray-700 shadow-sm"
+                                        : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700/50"
                                     }
                                 `}
                             >
-                                <Icon className={`h-5 w-5 ${isActive ? tab.color : "text-gray-500"}`} />
-                                <span className={`${isActive ? tab.color : "text-gray-500"}`}>
+                                <Icon className={`h-5 w-5 ${isActive ? tab.color : "text-gray-500 dark:text-gray-400"}`} />
+                                <span className={`${isActive ? tab.color : "text-gray-500 dark:text-gray-400"}`}>
                                     {tab.label}
                                 </span>
                             </button>

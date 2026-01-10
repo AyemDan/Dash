@@ -1,70 +1,39 @@
-import { useState, useEffect } from "react";
 import { useFormik } from "formik";
 import * as Yup from "yup";
 import { LuBookOpen, LuFileText, LuPlus, LuTrash2 } from "react-icons/lu";
 import Input from "../Input.tsx";
 import Select from "../Select.tsx";
 import ActionButton from "../ActionButton.tsx";
-import { api } from "../../utils/api.ts";
+import {
+    useGetModulesQuery,
+    useGetProgramsQuery,
+    useAddModuleMutation,
+    useDeleteModuleMutation
+} from "../../store/api/apiSlice.ts";
 
-interface Module {
-    id: string;
-    code: string;
-    title: string;
-    credits: number;
-    isActive: boolean;
-    program: string | any;
-}
-
-interface Program {
-    id: string;
-    title: string;
-}
 const Modules = () => {
-    const [modules, setModules] = useState<Module[]>([]);
-    const [programs, setPrograms] = useState<Program[]>([]);
-    const [isLoading, setIsLoading] = useState(false);
+    const { data: modulesData = [], isLoading: isModulesLoading } = useGetModulesQuery({});
+    const { data: programsData = [], isLoading: isProgramsLoading } = useGetProgramsQuery({});
+    const [addModule, { isLoading: isAdding }] = useAddModuleMutation();
+    const [deleteModule] = useDeleteModuleMutation();
 
-    console.log("Modules:", modules);
-    console.log("Programs:", programs);
+    const isLoading = isModulesLoading || isProgramsLoading || isAdding;
 
     const creditsOptions = [1, 2, 3, 4];
 
-    useEffect(() => {
-        fetchData();
-    }, []);
+    // Transform data
+    const modules = Array.isArray(modulesData) ? modulesData.map((m: any) => ({
+        ...m,
+        id: m._id || m.id,
+        // Ensure program is an object if possible or handle it
+        program: m.program // The backend seems to populate this or just send ID?
+    })) : [];
 
-    const fetchData = async () => {
-        try {
-            const [modulesData, programsData] = await Promise.all([
-                api.get("/modules"),
-                api.get("/programs")
-            ]);
+    const programs = Array.isArray(programsData) ? programsData.map((p: any) => ({
+        id: p._id || p.id,
+        title: p.title,
+    })) : [];
 
-            if (Array.isArray(modulesData)) {
-                setModules(modulesData.map((m: any) => ({
-                    ...m,
-                    id: m._id || m.id
-                })));
-            } else {
-                setModules([]);
-            }
-
-            console.log("Raw programs data:", programsData);
-            if (Array.isArray(programsData)) {
-                setPrograms(programsData.map((p: any) => ({
-                    id: p._id,
-                    title: p.title,
-                })));
-            } else {
-                setPrograms([]);
-            }
-        } catch (error) {
-            console.error("Failed to fetch data:", error);
-            setModules([]);
-            setPrograms([]);
-        }
-    };
 
     const validationSchema = Yup.object({
         title: Yup.string()
@@ -85,21 +54,16 @@ const Modules = () => {
         },
         validationSchema,
         onSubmit: async (values) => {
-            setIsLoading(true);
             try {
-                const newModule = await api.post("/modules", {
+                await addModule({
                     title: values.title,
                     credits: parseInt(values.credits),
                     program: values.program,
                     isActive: values.isActive,
-                });
-                setModules([...modules, { ...newModule, id: newModule._id || newModule.id }]);
+                }).unwrap();
                 formik.resetForm();
-                console.log("Module added:", newModule);
             } catch (error) {
                 console.error("Failed to add module:", error);
-            } finally {
-                setIsLoading(false);
             }
         },
     });
@@ -107,9 +71,7 @@ const Modules = () => {
     const handleDelete = async (id: string) => {
         if (!window.confirm("Are you sure you want to delete this module?")) return;
         try {
-            await api.delete(`/modules/${id}`);
-            setModules(modules.filter((module) => module.id !== id));
-            console.log("Module deleted:", id);
+            await deleteModule(id).unwrap();
         } catch (error) {
             console.error("Failed to delete module:", error);
         }
@@ -118,12 +80,12 @@ const Modules = () => {
     return (
         <div className="space-y-6">
             {/* Create New Module Section */}
-            <div className="bg-white rounded-xl border border-gray-200 p-6">
+            <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 transition-colors">
                 <div className="flex items-center gap-3 mb-2">
-                    <LuBookOpen className="h-6 w-6 text-green-600" />
-                    <h2 className="text-xl font-bold text-gray-900">Create New Module</h2>
+                    <LuBookOpen className="h-6 w-6 text-green-600 dark:text-green-400" />
+                    <h2 className="text-xl font-bold text-gray-900 dark:text-white">Create New Module</h2>
                 </div>
-                <p className="text-sm text-gray-600 mb-6">
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">
                     Add a new module to the catalog that can be assigned to participants
                 </p>
 
@@ -187,7 +149,7 @@ const Modules = () => {
                             }
                         >
                             <option value="">Select program</option>
-                            {programs.map((programs) => (
+                            {programs.map((programs: any) => (
                                 <option key={programs.id} value={programs.id}>
                                     {programs.title}
                                 </option>
@@ -217,27 +179,27 @@ const Modules = () => {
                 </form>
             </div>
 
-            <div className="bg-white rounded-xl border border-gray-200 p-6">
+            <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 transition-colors">
                 <div className="flex items-center gap-3 mb-4">
-                    <LuFileText className="h-6 w-6 text-amber-900" />
-                    <h2 className="text-xl font-bold text-gray-900">
+                    <LuFileText className="h-6 w-6 text-amber-900 dark:text-amber-500" />
+                    <h2 className="text-xl font-bold text-gray-900 dark:text-white">
                         Current Module Catalog ({modules.length} {modules.length === 1 ? "module" : "modules"})
                     </h2>
                 </div>
 
                 <div className="space-y-2 max-h-[500px] overflow-y-auto">
-                    {modules.map((module) => (
+                    {modules.map((module: any) => (
                         <div
                             key={module.id}
-                            className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+                            className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors border border-transparent dark:border-gray-600"
                         >
                             <div className="flex-1">
                                 <div className="flex items-center gap-2 mb-1">
-                                    <span className="font-bold text-gray-900">{module.code}</span>
-                                    <span className="text-gray-600">-</span>
-                                    <span className="text-gray-900">{module.title}</span>
+                                    <span className="font-bold text-gray-900 dark:text-white">{module.code}</span>
+                                    <span className="text-gray-600 dark:text-gray-400">-</span>
+                                    <span className="text-gray-900 dark:text-gray-200">{module.title}</span>
                                 </div>
-                                <p className="text-sm text-gray-600">
+                                <p className="text-sm text-gray-600 dark:text-gray-400">
                                     {module.credits} {module.credits === 1 ? "credit" : "credits"} • {module.program && typeof module.program === 'object' ? module.program.title : module.program}
                                 </p>
                             </div>

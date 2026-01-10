@@ -43,7 +43,7 @@ export const useImport = (modelName: string) => {
             formData.append('file', file);
 
             // api.post now handles FormData automatically
-            const res = await api.post(`/import/preview/${modelName}`, formData);
+            const res = await api.post(`/imports/preview/${modelName}`, formData);
 
             setPreviewData(res);
             setStatus(prev => ({ ...prev, loading: false }));
@@ -57,19 +57,19 @@ export const useImport = (modelName: string) => {
         }
     };
 
-    const confirmImport = async () => {
+    const confirmImport = async (dataToImport?: any[]) => {
         if (!previewData) return;
 
         setStatus(prev => ({ ...prev, loading: true, error: null }));
         try {
             const payload = {
-                data: previewData.fullData,
+                data: dataToImport || previewData.fullData,
                 originalName: fileDetails?.originalName || "Imported File",
                 size: fileDetails?.size || 0,
                 type: fileDetails?.type || 'unknown'
             };
 
-            const res = await api.post(`/import/confirm/${modelName}`, payload);
+            const res = await api.post(`/imports/confirm/${modelName}`, payload);
 
             setStatus({
                 loading: false,

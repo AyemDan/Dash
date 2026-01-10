@@ -139,23 +139,23 @@ const Grades = () => {
 
     return (
         <div className="space-y-6">
-            <div className="bg-white rounded-xl border border-gray-200 p-6">
+            <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 transition-colors">
                 <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
-                    <h2 className="text-2xl font-bold text-gray-900">Update Grades</h2>
+                    <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Update Grades</h2>
                     <div className="relative max-w-[300px] w-full">
-                        <LuSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
+                        <LuSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500 w-5 h-5" />
                         <input
                             type="text"
                             placeholder="Search by name or ID..."
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
-                            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none"
+                            className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-500 dark:placeholder-gray-400 transition-colors"
                         />
                     </div>
                 </div>
 
                 {filteredEnrollmentsByParticipant.length === 0 ? (
-                    <p className="text-gray-500 text-center py-8">
+                    <p className="text-gray-500 dark:text-gray-400 text-center py-8">
                         {searchQuery.trim() ? "No participants found matching your search." : "No participants found."}
                     </p>
                 ) : (
@@ -163,16 +163,16 @@ const Grades = () => {
                         const isOpen = openSections.has(participant.id);
 
                         return (
-                            <div key={participant.id} className={participant.id !== "1" ? "mt-8 pt-8 border-t border-gray-200" : ""}>
+                            <div key={participant.id} className={participant.id !== "1" ? "mt-8 pt-8 border-t border-gray-200 dark:border-gray-700" : ""}>
                                 <button
                                     onClick={() => toggleSection(participant.id)}
                                     className="w-full flex items-center justify-between text-left mb-4 hover:opacity-80 transition-opacity"
                                 >
-                                    <h3 className="text-lg font-bold text-gray-900">
+                                    <h3 className="text-lg font-bold text-gray-900 dark:text-white">
                                         {participant.firstName} {participant.lastName} ({participant.participantId}) - {participantEnrollments.length} {participantEnrollments.length === 1 ? "module" : "modules"}
                                     </h3>
                                     <LuChevronDown
-                                        className={`w-5 h-5 text-gray-600 transition-transform duration-200 ${isOpen ? "transform rotate-180" : ""
+                                        className={`w-5 h-5 text-gray-600 dark:text-gray-400 transition-transform duration-200 ${isOpen ? "transform rotate-180" : ""
                                             }`}
                                     />
                                 </button>
@@ -182,15 +182,15 @@ const Grades = () => {
                                         {participantEnrollments.map((enrollment, index) => (
                                             <div
                                                 key={enrollment.id}
-                                                className={`flex items-center justify-between py-4 ${index !== participantEnrollments.length - 1 ? "border-b border-gray-200" : ""
+                                                className={`flex items-center justify-between py-4 ${index !== participantEnrollments.length - 1 ? "border-b border-gray-200 dark:border-gray-700" : ""
                                                     }`}
                                             >
                                                 <div className="flex-1">
                                                     <div className="flex items-center gap-2 mb-1">
-                                                        <span className="font-bold text-gray-900">{enrollment.moduleCode}</span>
-                                                        <span className="text-gray-900">{enrollment.moduleName}</span>
+                                                        <span className="font-bold text-gray-900 dark:text-white">{enrollment.moduleCode}</span>
+                                                        <span className="text-gray-900 dark:text-gray-200">{enrollment.moduleName}</span>
                                                     </div>
-                                                    <p className="text-sm text-gray-600">
+                                                    <p className="text-sm text-gray-600 dark:text-gray-400">
                                                         {enrollment.semester || "N/A"} • {enrollment.credits} {enrollment.credits === 1 ? "credit" : "credits"}
                                                     </p>
                                                 </div>
@@ -204,7 +204,7 @@ const Grades = () => {
                                                         <select
                                                             value={enrollment.grade || ""}
                                                             onChange={(e) => handleGradeChange(enrollment.id, e.target.value)}
-                                                            className="appearance-none px-3 py-1 pr-8 bg-white border border-gray-300 rounded-full text-sm font-medium text-gray-700 cursor-pointer hover:bg-gray-50 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                                            className="appearance-none px-3 py-1 pr-8 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-full text-sm font-medium text-gray-700 dark:text-gray-200 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                                                         >
                                                             {gradeOptions.map((option) => (
                                                                 <option key={option.value} value={option.value}>
@@ -214,7 +214,7 @@ const Grades = () => {
                                                         </select>
                                                         <div className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none">
                                                             <svg
-                                                                className="w-4 h-4 text-gray-500"
+                                                                className="w-4 h-4 text-gray-500 dark:text-gray-400"
                                                                 fill="none"
                                                                 stroke="currentColor"
                                                                 viewBox="0 0 24 24"

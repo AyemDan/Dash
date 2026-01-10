@@ -15,11 +15,11 @@ const ScrollToTop = () => {
 
 const RootLayout = () => {
 
-    // Auth logic removed as it's commented out and likely handled elsewhere or pending implementation
+    // Auth logic removed as it's commented out and likely handled elsewhere or pending implementation`
 
     return (
-        <div className="w-full flex flex-col bg-[#F7F9FC] h-screen overflow-hidden">
-            <ScrollToTop />
+        <div className="w-full flex flex-col bg-[#F7F9FC] dark:bg-gray-900 h-screen overflow-hidden transition-colors duration-200">
+            `            <ScrollToTop />
             <Topbar />
             <section
                 id="scrollable-section"

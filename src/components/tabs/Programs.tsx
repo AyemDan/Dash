@@ -1,56 +1,35 @@
-import { useState, useEffect } from "react";
 import { useFormik } from "formik";
 import * as Yup from "yup";
 import { LuGraduationCap, LuFileText, LuPlus, LuTrash2 } from "react-icons/lu";
 import Input from "../Input.tsx";
 import Select from "../Select.tsx";
 import ActionButton from "../ActionButton.tsx";
-import { api } from "../../utils/api.ts";
-
-interface Program {
-    id: any;
-    title: string;
-    code: string,
-    modules: any[];
-    duration: number;
-    credits: number;
-    semester: number;
-    isActive: any;
-    participants: any[];
-}
+import {
+    useGetProgramsQuery,
+    useAddProgramMutation,
+    useDeleteProgramMutation
+} from "../../store/api/apiSlice.ts";
 
 const Programs = () => {
-    const [programs, setPrograms] = useState<Program[]>([]);
-    const [isLoading, setIsLoading] = useState(false);
+    const { data: programsData = [], isLoading: isProgramsLoading } = useGetProgramsQuery({});
+    const [addProgram, { isLoading: isAdding }] = useAddProgramMutation();
+    const [deleteProgram] = useDeleteProgramMutation();
 
-    useEffect(() => {
-        fetchPrograms();
-    }, []);
+    const isLoading = isProgramsLoading || isAdding;
 
-    const fetchPrograms = async () => {
-        try {
-            const data = await api.get("/programs");
-            if (Array.isArray(data)) {
-                const mappedPrograms = data.map((p: any) => ({
-                    id: p._id,
-                    title: p.title,
-                    code: p.code,
-                    modules: p.modules,
-                    credits: p.credits,
-                    duration: p.duration,
-                    semester: p.semester,
-                    isActive: p.isActive,
-                    participants: p.participants
-                }));
-                setPrograms(mappedPrograms);
-            } else {
-                setPrograms([]);
-            }
-        } catch (error) {
-            console.error("Failed to fetch programs:", error);
-            setPrograms([]);
-        }
-    };
+    // Transform data to match the component's expected structure if needed
+    // Assuming backend returns array of program objects
+    const programs = Array.isArray(programsData) ? programsData.map((p: any) => ({
+        id: p._id || p.id,
+        title: p.title,
+        code: p.code,
+        modules: p.modules,
+        credits: p.credits,
+        duration: p.duration,
+        semester: p.semester,
+        isActive: p.isActive,
+        participants: p.participants?.length || 0 // Assuming we just want count based on prev code
+    })) : [];
 
     const semesters = [1, 2];
 
@@ -74,21 +53,16 @@ const Programs = () => {
         },
         validationSchema,
         onSubmit: async (values) => {
-            setIsLoading(true);
             try {
-                const newProgram = await api.post("/programs", {
+                await addProgram({
                     title: values.title,
                     semester: values.semester,
                     duration: parseInt(values.duration),
                     participants: [],
-                });
-                // setPrograms([...programs, newProgram]);
+                }).unwrap();
                 formik.resetForm();
-                console.log("Program added:", newProgram);
             } catch (error) {
                 console.error("Failed to add programs:", error);
-            } finally {
-                setIsLoading(false);
             }
         },
     });
@@ -96,9 +70,7 @@ const Programs = () => {
     const handleDelete = async (id: string) => {
         if (!window.confirm("Are you sure you want to delete this programs?")) return;
         try {
-            await api.delete(`/programs/${id}`);
-            setPrograms(programs.filter((programs) => programs.id !== id));
-            console.log("Program deleted:", id);
+            await deleteProgram(id).unwrap();
         } catch (error) {
             console.error("Failed to delete programs:", error);
         }
@@ -107,12 +79,12 @@ const Programs = () => {
     return (
         <div className="space-y-6">
             {/* Create New Program Section */}
-            <div className="bg-white rounded-xl border border-gray-200 p-6">
+            <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 transition-colors">
                 <div className="flex items-center gap-3 mb-2">
-                    <LuGraduationCap className="h-6 w-6 text-amber-900" />
-                    <h2 className="text-xl font-bold text-gray-900">Create New Program</h2>
+                    <LuGraduationCap className="h-6 w-6 text-amber-900 dark:text-amber-500" />
+                    <h2 className="text-xl font-bold text-gray-900 dark:text-white">Create New Program</h2>
                 </div>
-                <p className="text-sm text-gray-600 mb-6">
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">
                     Add a new academic programs that participants can enroll in
                 </p>
 
@@ -207,33 +179,33 @@ const Programs = () => {
             </div>
 
             {/* Current Programs Section */}
-            <div className="bg-white rounded-xl border border-gray-200 p-6">
+            <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 transition-colors">
                 <div className="flex items-center gap-3 mb-4">
-                    <LuFileText className="h-6 w-6 text-amber-900" />
-                    <h2 className="text-xl font-bold text-gray-900">
+                    <LuFileText className="h-6 w-6 text-amber-900 dark:text-amber-500" />
+                    <h2 className="text-xl font-bold text-gray-900 dark:text-white">
                         Current Programs ({programs.length} {programs.length === 1 ? "programs" : "programs"})
                     </h2>
                 </div>
 
                 <div className="space-y-2 max-h-[500px] overflow-y-auto">
-                    {programs.map((programs) => (
+                    {programs.map((programs: any) => (
                         <div
                             key={programs.id}
-                            className="flex items-center justify-between p-4 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                            className="flex items-center justify-between p-4 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
                         >
                             <div className="flex-1">
                                 <div className="flex items-center gap-2 mb-1">
-                                    <span className="font-bold text-gray-900">{programs.code}</span>
+                                    <span className="font-bold text-gray-900 dark:text-white">{programs.code}</span>
                                 </div>
-                                <p className="text-sm text-gray-600 mb-1">
+                                <p className="text-sm text-gray-600 dark:text-gray-300 mb-1">
                                     {programs.title} • {programs.duration}
                                 </p>
-                                <p className="text-sm text-gray-500">
+                                <p className="text-sm text-gray-500 dark:text-gray-400">
                                     Participants enrolled: {programs.participants}
                                 </p>
                             </div>
                             <div className="flex items-center gap-3 ml-4">
-                                <span className="px-3 py-1 bg-gray-100 text-gray-700 text-sm font-medium rounded-full">
+                                <span className="px-3 py-1 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 text-sm font-medium rounded-full">
                                     {programs.duration} {programs.duration === 1 ? "month" : "months"}
                                 </span>
                                 <button
