@@ -65,10 +65,6 @@ const ImportExport = () => {
         }
     };
 
-    const handleConfirm = () => {
-        confirmImport();
-    };
-
     const handleCancel = () => {
         reset();
         setParticipantFile(null);
